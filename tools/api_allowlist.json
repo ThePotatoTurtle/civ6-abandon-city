@@ -1,0 +1,100 @@
+{
+ "_source": "hand-maintained; add a call only with evidence in refs (base-game file:line, research note, or a closed in-game spike)",
+ "events": {},
+ "gameinfo": {},
+ "globals": {
+  "include": {
+   "ctx": {
+    "G": {
+     "level": "C",
+     "tests": []
+    },
+    "UI": {
+     "level": "C",
+     "tests": []
+    }
+   },
+   "refs": [
+    "base game scripts use include() in gameplay and UI contexts"
+   ]
+  },
+  "print": {
+   "ctx": {
+    "G": {
+     "level": "C",
+     "tests": []
+    },
+    "UI": {
+     "level": "C",
+     "tests": []
+    }
+   },
+   "refs": [
+    "Lua basic"
+   ]
+  },
+  "unpack": {
+   "ctx": {
+    "G": {
+     "level": "C",
+     "tests": []
+    },
+    "UI": {
+     "level": "C",
+     "tests": []
+    }
+   },
+   "refs": [
+    "Lua 5.1 basic"
+   ]
+  }
+ },
+ "methods": {},
+ "static": {
+  "include": {
+   "ctx": {
+    "G": {
+     "level": "C",
+     "tests": []
+    },
+    "UI": {
+     "level": "C",
+     "tests": []
+    }
+   },
+   "refs": [
+    "base game scripts use include() in gameplay and UI contexts"
+   ]
+  },
+  "print": {
+   "ctx": {
+    "G": {
+     "level": "C",
+     "tests": []
+    },
+    "UI": {
+     "level": "C",
+     "tests": []
+    }
+   },
+   "refs": [
+    "Lua basic"
+   ]
+  },
+  "unpack": {
+   "ctx": {
+    "G": {
+     "level": "C",
+     "tests": []
+    },
+    "UI": {
+     "level": "C",
+     "tests": []
+    }
+   },
+   "refs": [
+    "Lua 5.1 basic"
+   ]
+  }
+ }
+}
