@@ -10,7 +10,8 @@
 -- Globals provided: Game, Players, PlayerManager, PlayerConfigurations, Map,
 -- Units, UnitManager, CityManager, GameInfo, GameConfiguration, GameEvents,
 -- Events, LuaEvents, NotificationManager, Locale, include, DirectionTypes,
--- DomainTypes, ParameterTypes, PlayerOperations. fake_ui.lua adds the UI
+-- DomainTypes, ParameterTypes, PlayerOperations, DefenseTypes, WarTypes,
+-- WorldBuilder (CityManager():CreateDistrict only). fake_ui.lua adds the UI
 -- context (UI, Controls, ...).
 --
 -- All mutable state lives in the global table FAKE so tests can inspect it.
@@ -220,6 +221,9 @@ end
 ParameterTypes = { MESSAGE = "MESSAGE", SUMMARY = "SUMMARY", LOCATION = "LOCATION", PLAYER_ID = "PLAYER_ID" }
 PlayerOperations = { EXECUTE_SCRIPT = 1 }
 DomainTypes = { DOMAIN_LAND = "DOMAIN_LAND", DOMAIN_SEA = "DOMAIN_SEA", DOMAIN_AIR = "DOMAIN_AIR" }
+-- DefenseTypes: CitySupport.lua:369-372; WarTypes.FORMAL_WAR: NubiaScenario.lua:172.
+DefenseTypes = { DISTRICT_GARRISON = 0, DISTRICT_OUTER = 1 }
+WarTypes = { SURPRISE_WAR = 0, FORMAL_WAR = 1 }
 DirectionTypes = { DIRECTION_NORTHEAST = 0, DIRECTION_EAST = 1, DIRECTION_SOUTHEAST = 2,
 	DIRECTION_SOUTHWEST = 3, DIRECTION_WEST = 4, DIRECTION_NORTHWEST = 5, NUM_DIRECTION_TYPES = 6 }
 
@@ -386,6 +390,24 @@ function FAKE.AddType(typeName, kind)
 	return GameInfo.Types[typeName]
 end
 
+-- Adds a row to any GameInfo table (created when missing), e.g.
+-- FAKE.AddRow("Units", "UnitType", { UnitType = "UNIT_WARRIOR", FormationClass = "FORMATION_CLASS_LAND_COMBAT" }).
+-- Returns the row (with Index and Hash).
+function FAKE.AddRow(tableName, pk, row)
+	local data = FAKE.gameInfoData or { Types = { pk = "Type", rows = {} } }
+	data[tableName] = data[tableName] or { pk = pk, rows = {} }
+	local spec = data[tableName]
+	if pk ~= nil and GameInfo[tableName] ~= nil and GameInfo[tableName][row[pk]] ~= nil then
+		return GameInfo[tableName][row[pk]]
+	end
+	local copy = {}
+	for k, v in pairs(row) do copy[k] = v end
+	spec.rows[#spec.rows + 1] = copy
+	FAKE.gameInfoData = data
+	BuildTable(tableName, spec)
+	return GameInfo[tableName][#spec.rows - 1]
+end
+
 -- ---------------------------------------------------------------------------
 -- Game, GameConfiguration
 -- ---------------------------------------------------------------------------
@@ -435,6 +457,9 @@ function Plot:GetOwner() return self.owner or -1 end
 function Plot:IsOwned() return (self.owner or -1) >= 0 end
 function Plot:IsCity() return CityManager.GetCityAt(self.x, self.y) ~= nil end
 function Plot:GetTerrainType() return self.terrain end
+-- plot:SetProperty / GetProperty (CivRoyaleScenario_StartScript.lua:496, :735)
+function Plot:SetProperty(k, v) self.props = self.props or {}; self.props[k] = DeepCopy(v) end
+function Plot:GetProperty(k) return self.props and DeepCopy(self.props[k]) or nil end
 function Plot:GetUnitCount()
 	local n = 0
 	for _, u in pairs(FAKE.units) do
@@ -649,11 +674,32 @@ function UnitManager.GetUnit(pid, uid)
 end
 function UnitManager.Kill(u, bDelay) return FAKE.RemoveUnit(u, "KILL") end
 
+-- Unit creation from GameInfo.Units rows (GetUnits():Create(index, x, y), EFV
+-- SPIKES.md:354; UnitManager.InitUnit(pid, typeName, x, y), AustraliaScenario.lua:729).
+-- A civilian FormationClass gives combat 0; GetType() returns the row index.
+local function NewUnitFromRow(pid, row, x, y)
+	if row == nil then error("unit type not in GameInfo.Units", 2) end
+	local civilian = row.FormationClass == "FORMATION_CLASS_CIVILIAN"
+	local u = FAKE.NewUnit(pid, row.UnitType, x, y, { combat = civilian and 0 or 20, military = not civilian })
+	u.typeIndex = row.Index
+	return u
+end
+function UnitManager.InitUnit(pid, typeName, x, y)
+	return NewUnitFromRow(pid, GameInfo.Units and GameInfo.Units[typeName], x, y)
+end
+
 -- ---------------------------------------------------------------------------
 -- Cities (generic: owner, position, population, capital flags)
 -- ---------------------------------------------------------------------------
 local City = {}
-City.__index = City
+local CityUI = {}   -- UI-only city methods (nil in G)
+City.__index = function(t, k)
+	local v = City[k]
+	if v == nil and FAKE.context == "UI" then
+		return CityUI[k]
+	end
+	return v
+end
 function City:GetID() return self.id end
 function City:GetOwner() return self.owner end
 function City:GetOriginalOwner() return self.originalOwner end
@@ -669,6 +715,52 @@ function City:ChangePopulation(d)
 end
 function City:SetProperty(k, v) self.props[k] = DeepCopy(v) end
 function City:GetProperty(k) return DeepCopy(self.props[k]) end
+-- Loyalty: pCity:ChangeLoyalty(n) (G, BlackDeathScenario_UnitCommands.lua:171),
+-- clamped to 0..100; the cultural identity object is UI-only (CityPanelCulture.lua:88-149).
+-- c.loyaltyPerTurn and c.breakdown are plain test-set values (no engine model).
+function City:ChangeLoyalty(n)
+	self.loyalty = math.max(0, math.min(100, (self.loyalty or 100) + (n or 0)))
+end
+function City:AttachModifierByID(id)
+	self.modifiers[#self.modifiers + 1] = id
+	return true
+end
+function CityUI.GetCulturalIdentity(self)
+	local c = self
+	return {
+		GetLoyalty = function() return c.loyalty or 100 end,
+		GetMaxLoyalty = function() return 100 end,
+		GetLoyaltyPerTurn = function() return c.loyaltyPerTurn or 0 end,
+		GetIdentitySourcesDetailedBreakdown = function() return DeepCopy(c.breakdown or {}) end,
+	}
+end
+-- Growth: GetHousing in G (BlackDeathScenario_Support.lua:265); the food readers are UI-only (CitySupport.lua:474-486).
+local function UIOnly(t, ui)
+	return setmetatable(t, { __index = function(_, k)
+		if FAKE.context == "UI" then return ui[k] end
+		return nil
+	end })
+end
+function City:GetGrowth()
+	local c = self
+	return UIOnly({ GetHousing = function() return c.housing or 4 end }, {
+		GetFood = function() return c.food or 0 end,
+		GetGrowthThreshold = function() return 20 end,
+		GetFoodSurplus = function() return 2 end,
+		GetTurnsUntilGrowth = function() return 10 end,
+	})
+end
+-- Citizens: the object in G (WarMachineScenario.lua:174); IsPlotWorked is UI-only (ReportScreen.lua:585).
+function City:GetCitizens()
+	local c = self
+	return UIOnly({}, { IsPlotWorked = function(_, x, y) return c.worked ~= nil and c.worked[x .. "," .. y] == true end })
+end
+function City:GetReligion()
+	return { GetMajorityReligion = function() return -1 end }
+end
+function CityUI.GetTrade(self) return { GetOutgoingRoutes = function() return {} end } end
+function CityUI.GetDistrictID(self) return self.district and self.district.id or -1 end
+
 -- Test-side only: set the population directly.
 function FAKE.SetPopulation(c, n) c.population = math.max(1, n) end
 
@@ -681,9 +773,10 @@ function FAKE.NewCity(pid, x, y, opts)
 		id = id, owner = pid, originalOwner = pid, x = x, y = y,
 		name = opts.name or ("LOC_CITY_NAME_FAKE_" .. id), capital = opts.capital,
 		originalCapital = opts.originalCapital or opts.capital,
-		population = opts.population or 1, plots = {}, props = {},
+		population = opts.population or 1, plots = {}, props = {}, modifiers = {},
 	}, City)
 	FAKE.cityList[#FAKE.cityList + 1] = c
+	c.district = FAKE.NewDistrict(c, x, y, "DISTRICT_CITY_CENTER")
 	for _, p in ipairs(Map.GetNeighborPlots(x, y, opts.radius or 2)) do
 		if p.owner == -1 or p.owner == nil or (p.x == x and p.y == y) then
 			p.owner = pid
@@ -707,6 +800,9 @@ end
 function FAKE.RemoveCity(c)
 	if c == nil or c.destroyed then return false end
 	c.destroyed = true
+	for i = #FAKE.districts, 1, -1 do
+		if FAKE.districts[i].city == c then table.remove(FAKE.districts, i) end
+	end
 	for _, idx in ipairs(c.plots) do
 		local p = FAKE.map.plots[idx]
 		if p.owner == c.owner then p.owner = -1 end
@@ -715,7 +811,59 @@ function FAKE.RemoveCity(c)
 	return true
 end
 
+-- Districts (generic): one per city centre plus any created by
+-- WorldBuilder.CityManager():CreateDistrict. Damage per DefenseTypes
+-- (CitySupport.lua:369-372); IsUnderSiege is UI-only (CitySupport.lua:620).
+FAKE.districts = {}
+FAKE.nextDistrictID = 1
+local District = {}
+local DistrictUI = {}
+District.__index = function(t, k)
+	local v = District[k]
+	if v == nil and FAKE.context == "UI" then return DistrictUI[k] end
+	return v
+end
+function District:GetID() return self.id end
+function District:GetX() return self.x end
+function District:GetY() return self.y end
+function District:GetOwner() return self.city.owner end
+function District:GetDamage(t) return self.damage[t or 0] or 0 end
+function District:GetMaxDamage(t)
+	if t == DefenseTypes.DISTRICT_OUTER then return self.maxOuter or 0 end
+	return self.maxGarrison or 200
+end
+function District:SetDamage(t, v) self.damage[t or 0] = math.max(0, math.min(self:GetMaxDamage(t), v or 0)) end
+function DistrictUI.IsUnderSiege(self) return self.siege == true end
+
+function FAKE.NewDistrict(city, x, y, typeName)
+	local d = setmetatable({ id = FAKE.nextDistrictID, city = city, x = x, y = y, typeName = typeName, damage = {} }, District)
+	FAKE.nextDistrictID = FAKE.nextDistrictID + 1
+	FAKE.districts[#FAKE.districts + 1] = d
+	return d
+end
+
 CityManager = {}
+function CityManager.GetDistrictAt(x, y)
+	if type(x) == "number" and FAKE.map ~= nil and FAKE.map.wrapX then x = x % FAKE.map.w end
+	for _, d in ipairs(FAKE.districts) do
+		if d.x == x and d.y == y then return d end
+	end
+	return nil
+end
+
+-- WorldBuilder.CityManager():CreateDistrict(city, districtIndex, percent, plotIndex)
+-- (BlackDeathScenario_Support.lua:318). Other WorldBuilder members are not modelled.
+WorldBuilder = {}
+local WBCity = {}
+function WBCity.CreateDistrict(self, city, idx, pct, plotIndex)
+	local p = Map.GetPlotByIndex(plotIndex)
+	if p == nil or city == nil then return false end
+	local row = GameInfo.Districts and GameInfo.Districts[idx]
+	FAKE.NewDistrict(city, p.x, p.y, row and row.DistrictType or tostring(idx))
+	return true
+end
+function WorldBuilder.CityManager() return WBCity end
+
 function CityManager.GetCityAt(x, y)
 	if type(x) == "number" and FAKE.map ~= nil and FAKE.map.wrapX then x = x % FAKE.map.w end
 	for _, c in ipairs(FAKE.cityList) do
@@ -782,6 +930,8 @@ local function NewDiplomacy(pid)
 		return PairGet(FAKE.diplo.met, pid, b)
 	end
 	function d:DeclareWarOn(b) FAKE.SetWar(pid, b, true) end
+	-- SetHasMet (AlexanderScenario.lua:13): one direction only in the fake.
+	function d:SetHasMet(b) PairSet(FAKE.diplo.met, pid, b, true) end
 	-- UI only (nil in G, measured in game).
 	local ui = {}
 	function ui.HasOpenBordersFrom(self, b) return PairGet(FAKE.diplo.ob, pid, b) end
@@ -822,6 +972,18 @@ function Player:IsHuman() return self.human == true end
 function Player:IsMajor() return self.kind == "MAJOR" end
 function Player:IsBarbarian() return self.kind == "BARBARIAN" end
 function PlayerUI.IsFreeCities(self) return self.kind == "FREE_CITIES" end
+-- Players[p]:GetDistricts():FindID(id) (UI: CitySupport.lua:360).
+function PlayerUI.GetDistricts(self)
+	local pid = self.id
+	return {
+		FindID = function(_, did)
+			for _, d in ipairs(FAKE.districts) do
+				if d.id == did and d.city.owner == pid then return d end
+			end
+			return nil
+		end,
+	}
+end
 function Player:GetTeam() return self.team end
 function Player:GetDiplomacy() return self.diplomacy end
 function Player:GetUnits() return self.unitsColl end
@@ -847,6 +1009,8 @@ function FAKE.NewPlayer(id, opts)
 		FindID = function(_, uid) return UnitManager.GetUnit(id, uid) end,
 		Members = function() return ipairs(FAKE.UnitsOf(id)) end,
 		GetCount = function() return #FAKE.UnitsOf(id) end,
+		-- GetUnits():Create(unitIndex, x, y) (EFV SPIKES.md:354, in game)
+		Create = function(_, idx, x, y) return NewUnitFromRow(id, GameInfo.Units and GameInfo.Units[idx], x, y) end,
 	}
 	p.citiesColl = {
 		FindID = function(_, cid) return CityManager.GetCity(id, cid) end,
@@ -857,6 +1021,11 @@ function FAKE.NewPlayer(id, opts)
 				if c.capital then return c end
 			end
 			return nil
+		end,
+		-- GetCities():Create(x, y) (AustraliaScenario.lua:1163): a new pop-1 city.
+		Create = function(_, x, y)
+			if CityManager.GetCityAt(x, y) ~= nil then return nil end
+			return FAKE.NewCity(id, x, y, { population = 1, radius = 1 })
 		end,
 	}
 	Players[id] = p
@@ -890,6 +1059,14 @@ function PlayerManager.GetAliveMinors()
 	return out
 end
 function PlayerManager.GetFreeCitiesPlayerID() return FAKE.freeCitiesID end
+-- Alive major IDs (BlackDeathScenario.lua:461); DESCENDING like GetAliveIDs.
+function PlayerManager.GetAliveMajorIDs()
+	local out = {}
+	for _, id in ipairs(PlayerManager.GetAliveIDs()) do
+		if FAKE.players[id].kind == "MAJOR" then out[#out + 1] = id end
+	end
+	return out
+end
 function PlayerManager.GetAliveMajorsCount() return #PlayerManager.GetAliveMajors() end
 function PlayerManager.IsValid(id) return FAKE.players[id] ~= nil end
 

@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Mod id="3e330bb9-9538-494e-8e13-44d6cc1c6a5c" version="1">
+  <Properties>
+    <Name>Abandon City Spike Tools (testing only) v0.0.0.1</Name>
+    <Teaser>Spike test panel for Abandon City. Not for normal play.</Teaser>
+    <Description>Developer panel for the Abandon City spike session: test cities, population cuts, loyalty debuff variants, siege and damage readings, custom notifications, a city panel test button and city removal probes. Open it with Ctrl+Shift+D or the DEV button on the launch bar. Writes to Lua.log. Works on its own (the Abandon City mod is not needed). Start a new game with it. Never enable it in a real game.</Description>
+    <Authors>ThePotatoTurtle</Authors>
+    <AffectsSavedGames>1</AffectsSavedGames>
+    <CompatibleVersions>2.0</CompatibleVersions>
+  </Properties>
+
+  <Dependencies>
+    <Mod id="4873eb62-8ccc-4574-b784-dda455e74e68" title="Expansion: Gathering Storm" />
+  </Dependencies>
+
+  <ActionCriteria>
+    <Criteria id="ABN_DEV_XP2">
+      <GameCoreInUse>Expansion2</GameCoreInUse>
+    </Criteria>
+  </ActionCriteria>
+
+  <InGameActions>
+    <UpdateDatabase id="ABN_DEV_Data" criteria="ABN_DEV_XP2">
+      <Properties>
+        <LoadOrder>14000</LoadOrder>
+      </Properties>
+      <File>Data/ABN_Dev_Spike.xml</File>
+    </UpdateDatabase>
+    <UpdateText id="ABN_DEV_Text" criteria="ABN_DEV_XP2">
+      <Properties>
+        <LoadOrder>14000</LoadOrder>
+      </Properties>
+      <File>Data/ABN_Dev_Text.xml</File>
+    </UpdateText>
+    <AddGameplayScripts id="ABN_DEV_Gameplay" criteria="ABN_DEV_XP2">
+      <Properties>
+        <LoadOrder>14000</LoadOrder>
+      </Properties>
+      <File>Scripts/ABN_Dev_Gameplay.lua</File>
+    </AddGameplayScripts>
+    <AddUserInterfaces id="ABN_DEV_UI" criteria="ABN_DEV_XP2">
+      <Properties>
+        <Context>InGame</Context>
+        <LoadOrder>14000</LoadOrder>
+      </Properties>
+      <File>UI/ABN_Dev_Panel.xml</File>
+    </AddUserInterfaces>
+  </InGameActions>
+
+  <Files>
+    <File>Data/ABN_Dev_Spike.xml</File>
+    <File>Data/ABN_Dev_Text.xml</File>
+    <File>Scripts/ABN_Dev_Gameplay.lua</File>
+    <File>UI/ABN_Dev_Panel.lua</File>
+    <File>UI/ABN_Dev_Panel.xml</File>
+  </Files>
+</Mod>

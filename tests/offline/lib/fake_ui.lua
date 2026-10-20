@@ -152,7 +152,22 @@ function FAKE_UI.Enable()
 			end
 		end,
 		PlaySound = function(s) FAKE_UI.sounds = FAKE_UI.sounds or {}; FAKE_UI.sounds[#FAKE_UI.sounds + 1] = s end,
+		-- City selection (CityPanel.lua:487; RazeCity.lua:51): FAKE_UI.selectedCity
+		GetHeadSelectedCity = function() return FAKE_UI.selectedCity end,
+		DeselectAllCities = function() FAKE_UI.selectedCity = nil end,
 	}
+	-- City commands (RazeCity.lua:40-56). CanStartCommand answers FAKE_UI.canDestroy
+	-- (default false: unknown for an ordinary own city); RequestCommand is recorded in
+	-- FAKE_UI.cityCommands and removes the city only when FAKE_UI.destroyRemoves is true.
+	CityCommandTypes = { DESTROY = "DESTROY" }
+	CityDestroyDirectives = { LIBERATE_FOUNDER = 0, LIBERATE_PREVIOUS_OWNER = 1, KEEP = 2, RAZE = 3 }
+	UnitOperationTypes = { PARAM_FLAGS = "PARAM_FLAGS" }
+	FAKE_UI.cityCommands = {}
+	CityManager.CanStartCommand = function(city, cmd, params) return FAKE_UI.canDestroy == true and city ~= nil end
+	CityManager.RequestCommand = function(city, cmd, params)
+		FAKE_UI.cityCommands[#FAKE_UI.cityCommands + 1] = { city = city, cmd = cmd, params = FAKE.DeepCopy(params), localPlayer = FAKE.localPlayer }
+		if FAKE_UI.destroyRemoves and city ~= nil then FAKE.RemoveCity(city) end
+	end
 	FAKE.localPlayer = FAKE.localPlayer or 0
 end
 
