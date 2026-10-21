@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-  Abandon City install script: static checks -> mirror ABN\ into the game's Mods folder -> optional log tail.
+  Abandon Cities install script: static checks -> mirror ABN\ into the game's Mods folder -> optional log tail.
 
 .DESCRIPTION
   Default:     runs tools\check_all.py on ABN\ (and ABN_Dev\ with -Dev); aborts on errors unless -Force;
@@ -136,9 +136,9 @@ if ($Uninstall) {
     $localAbn = Join-Path $ModsDir $leaf
     if (Test-Path -LiteralPath $localAbn -PathType Container) {
         Remove-Item -LiteralPath $localAbn -Recurse -Force
-        Write-Host "Removed the local copy of Abandon City: $localAbn" -ForegroundColor Green
+        Write-Host "Removed the local copy of Abandon Cities: $localAbn" -ForegroundColor Green
     } else {
-        Write-Host "No local copy of Abandon City in $ModsDir (nothing to remove)."
+        Write-Host "No local copy of Abandon Cities in $ModsDir (nothing to remove)."
     }
     Write-Host "The dev tools (ABN_Dev) stay."
     exit 0

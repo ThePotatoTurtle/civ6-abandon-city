@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""run_tests.py - offline tests for the Abandon City mod: real mod scripts on a fake Civ VI engine.
+"""run_tests.py - offline tests for the Abandon Cities mod: real mod scripts on a fake Civ VI engine.
 
 Runs tests/offline/test_*.lua on lupa's Lua 5.1 runtime with lib/fake_engine.lua,
 lib/fake_ui.lua and lib/harness.lua. Every test gets a fresh Lua state.

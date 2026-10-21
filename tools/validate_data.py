@@ -29,7 +29,7 @@ Checks
             package = info).
             Displayed name: an en_US text VALUE (UpdateText rows, modinfo <LocalizedText>) or a literal
             modinfo Name / Teaser / Description / Authors that contains the word "ABN" is an error:
-            players see "Abandon City"; the internal ABN_ prefix of keys, types, files and log lines is
+            players see "Abandon Cities"; the internal ABN_ prefix of keys, types, files and log lines is
             unaffected ("ABN_" never matches).
             No dashes (project style rule): an en dash (U+2013) or em dash (U+2014) in any UpdateText text
             or modinfo <LocalizedText> text is an error ("text-dash"); use a plain hyphen or reword.
@@ -59,7 +59,7 @@ IGNORED_UNLISTED = re.compile(r"(\.md|\.txt|\.bak|\.orig|~|thumbs\.db|desktop\.i
 PLACEHOLDER_RE = re.compile(r"\{(\d+)_[^}]*\}")
 LOC_FULL = re.compile(r"^LOC_[A-Z0-9_]+$")
 LOC_PREFIX = re.compile(r"^LOC_[A-Z0-9_]*_$")
-# Players see "Abandon City", never the internal prefix "ABN"
+# Players see "Abandon Cities", never the internal prefix "ABN"
 # (word match: "ABN_..." keys and identifiers do not match).
 DISPLAY_ABN_RE = re.compile(r"(?<![A-Za-z0-9_])ABN(?![A-Za-z0-9_])")
 # Designer (0.7): no en or em dashes in player-visible text.
@@ -244,7 +244,7 @@ class Validator:
             if LOC_FULL.match(val or ""):
                 self.loc_refs.append((val, p, 0))
             elif key in ("Name", "Teaser", "Description", "Authors") and DISPLAY_ABN_RE.search(val or ""):
-                rep.error(p, 0, "text-display-name", "Properties/%s shows \"ABN\"; players see \"Abandon City\"" % key)
+                rep.error(p, 0, "text-display-name", "Properties/%s shows \"ABN\"; players see \"Abandon Cities\"" % key)
         dep_ids = {(d[0] or "").lower() for d in mi.deps}
         if L.GS_GUID not in dep_ids:
             rep.error(p, 0, "modinfo-deps", "no Dependency on Gathering Storm (%s)" % L.GS_GUID)
@@ -523,7 +523,7 @@ class Validator:
                         self.rep.warn(f, 0, "text-tag", "tag %r does not follow LOC_UPPER_CASE" % tag)
                     self._check_plurals(f, tag, txt or "")
                     if lang == "en_US" and DISPLAY_ABN_RE.search(txt or ""):
-                        self.rep.error(f, 0, "text-display-name", "%s: the text shows \"ABN\"; players see \"Abandon City\"" % tag)
+                        self.rep.error(f, 0, "text-display-name", "%s: the text shows \"ABN\"; players see \"Abandon Cities\"" % tag)
                     if DASH_RE.search(txt or ""):
                         self.rep.error(f, 0, "text-dash", DASH_MSG % tag)
                     key = (lang, tag)
@@ -581,7 +581,7 @@ class Validator:
                     for c in langs:
                         lang = L._local(c.tag)
                         if lang == "en_US" and DISPLAY_ABN_RE.search(c.text or ""):
-                            self.rep.error(mi, 0, "text-display-name", "%s: the text shows \"ABN\"; players see \"Abandon City\"" % tag)
+                            self.rep.error(mi, 0, "text-display-name", "%s: the text shows \"ABN\"; players see \"Abandon Cities\"" % tag)
                         if DASH_RE.search(c.text or ""):
                             self.rep.error(mi, 0, "text-dash", DASH_MSG % tag)
                         key = (lang, tag)

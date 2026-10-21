@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- ABN_Dev_Panel: spike panel for the Abandon City spike session (UI context, AddUserInterfaces InGame).
+<!-- ABN_Dev_Panel: spike panel for the Abandon Cities spike session (UI context, AddUserInterfaces InGame).
      Toggle: Ctrl+Shift+D or the "DEV" launch bar button. InGame.lua loads this context HIDDEN;
      the Lua un-hides ContextPtr in Initialize and toggles only the Main container.
      Layout copied from EFV_Dev_Panel.xml. ABN_DevBtnStack (S6) sits outside Main: S6 Attach
@@ -12,7 +12,7 @@
 		<Box Anchor="L,B" Size="parent,2" Color="200,170,110,255"/>
 		<Stack ID="MainStack" Anchor="L,T" Offset="10,8" StackGrowth="Bottom" StackPadding="4">
 			<Container Size="640,28">
-				<Label ID="TitleLabel" Anchor="L,C" Style="FontNormal18" Color="240,220,170,255" String="Abandon City spike tools"/>
+				<Label ID="TitleLabel" Anchor="L,C" Style="FontNormal18" Color="240,220,170,255" String="Abandon Cities spike tools"/>
 				<GridButton ID="RefreshButton" Anchor="R,C" Offset="76,0" Size="70,26" SliceCorner="12,12" SliceSize="1,1" SliceTextureSize="24,24" Texture="Controls_ButtonControl_Brown" StateOffsetIncrement="0,24" Style="FontNormal14" TextColor="230,220,200,255" String="Refresh"/>
 				<GridButton ID="CloseButton" Anchor="R,C" Size="70,26" SliceCorner="12,12" SliceSize="1,1" SliceTextureSize="24,24" Texture="Controls_ButtonControl_Brown" StateOffsetIncrement="0,24" Style="FontNormal14" TextColor="230,220,200,255" String="Close"/>
 			</Container>
@@ -30,7 +30,7 @@
 
 	<!-- S6 test button: 44x53, UnitPanel_ActionButton texture (CityPanel.xml:162-166 size). -->
 	<Stack ID="ABN_DevBtnStack" Anchor="L,T" StackGrowth="Right" Padding="3" Hidden="1" ConsumeMouse="1">
-		<Button ID="ABN_DevS6Button" Anchor="L,T" Size="44,53" Texture="UnitPanel_ActionButton" ToolTip="Abandon City spike S6: test button. Click it, change production, use prev/next city, close the panel.">
+		<Button ID="ABN_DevS6Button" Anchor="L,T" Size="44,53" Texture="UnitPanel_ActionButton" ToolTip="Abandon Cities spike S6: test button. Click it, change production, use prev/next city, close the panel.">
 			<Label Anchor="C,C" Offset="0,-2" Style="FontNormal14" Color="240,220,170,255" String="S6"/>
 		</Button>
 	</Stack>
@@ -46,7 +46,7 @@
 	</Instance>
 
 	<Instance Name="DevLaunchBarItem">
-		<Button ID="LaunchItemButton" Anchor="L,C" Size="49,49" Texture="LaunchBar_Hook_GreatPeopleButton" Style="ButtonNormalText" TextureOffset="0,-1" StateOffsetIncrement="0,49" ToolTip="Abandon City spike panel (Ctrl+Shift+D)">
+		<Button ID="LaunchItemButton" Anchor="L,C" Size="49,49" Texture="LaunchBar_Hook_GreatPeopleButton" Style="ButtonNormalText" TextureOffset="0,-1" StateOffsetIncrement="0,49" ToolTip="Abandon Cities spike panel (Ctrl+Shift+D)">
 			<Label Anchor="C,C" Offset="0,1" Style="FontNormal14" Color="240,220,170,255" String="DEV"/>
 		</Button>
 	</Instance>

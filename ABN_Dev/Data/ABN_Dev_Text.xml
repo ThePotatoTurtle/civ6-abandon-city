@@ -4,13 +4,13 @@
 <GameData>
 	<LocalizedText>
 		<Row Tag="LOC_ABN_DEV_NOTIF_A_MESSAGE" Language="en_US">
-			<Text>Abandon City spike S5: notification A (expires at the end of the turn), sent on turn {1_Turn}. Click it: the camera should move to city S4.</Text>
+			<Text>Abandon Cities spike S5: notification A (expires at the end of the turn), sent on turn {1_Turn}. Click it: the camera should move to city S4.</Text>
 		</Row>
 		<Row Tag="LOC_ABN_DEV_NOTIF_A_SUMMARY" Language="en_US">
 			<Text>Spike notification A (turn {1_Turn})</Text>
 		</Row>
 		<Row Tag="LOC_ABN_DEV_NOTIF_B_MESSAGE" Language="en_US">
-			<Text>Abandon City spike S5: notification B (stays until dismissed), sent on turn {1_Turn}. It has no location.</Text>
+			<Text>Abandon Cities spike S5: notification B (stays until dismissed), sent on turn {1_Turn}. It has no location.</Text>
 		</Row>
 		<Row Tag="LOC_ABN_DEV_NOTIF_B_SUMMARY" Language="en_US">
 			<Text>Spike notification B (turn {1_Turn})</Text>

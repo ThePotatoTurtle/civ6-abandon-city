@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Mod id="3e330bb9-9538-494e-8e13-44d6cc1c6a5c" version="1">
   <Properties>
-    <Name>Abandon City Spike Tools (testing only) v0.0.0.1</Name>
-    <Teaser>Spike test panel for Abandon City. Not for normal play.</Teaser>
-    <Description>Developer panel for the Abandon City spike session: test cities, population cuts, loyalty debuff variants, siege and damage readings, custom notifications, a city panel test button and city removal probes. Open it with Ctrl+Shift+D or the DEV button on the launch bar. Writes to Lua.log. Works on its own (the Abandon City mod is not needed). Start a new game with it. Never enable it in a real game.</Description>
+    <Name>Abandon Cities Spike Tools (testing only) v0.0.0.1</Name>
+    <Teaser>Spike test panel for Abandon Cities. Not for normal play.</Teaser>
+    <Description>Developer panel for the Abandon Cities spike session: test cities, population cuts, loyalty debuff variants, siege and damage readings, custom notifications, a city panel test button and city removal probes. Open it with Ctrl+Shift+D or the DEV button on the launch bar. Writes to Lua.log. Works on its own (the Abandon Cities mod is not needed). Start a new game with it. Never enable it in a real game.</Description>
     <Authors>ThePotatoTurtle</Authors>
     <AffectsSavedGames>1</AffectsSavedGames>
     <CompatibleVersions>2.0</CompatibleVersions>

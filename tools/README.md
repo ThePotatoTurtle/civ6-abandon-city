@@ -1,6 +1,6 @@
 # Tools: static checks, install and logs
 
-Offline checks for the Abandon City mod (internal prefix `ABN`; players only ever see "Abandon City"), plus the install script and log readers. Run everything from the project folder with Python 3.11+. Only `check_lua.py` needs an extra package: `pip install lupa`.
+Offline checks for the Abandon Cities mod (internal prefix `ABN`; players only ever see "Abandon Cities"), plus the install script and log readers. Run everything from the project folder with Python 3.11+. Only `check_lua.py` needs an extra package: `pip install lupa`.
 
 The tools were ported from the EFV mod's tooling. Rules that belonged to that mod (reason codes, notification plans, PLAN/DECISIONS blocks) are gone.
 
