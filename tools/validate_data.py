@@ -372,7 +372,10 @@ class Validator:
                 for tbl, col in (("Notifications", "NotificationType"), ("Types", "Type"), ("TypeTags", "Type"),
                                  ("UnitAbilities", "UnitAbilityType"), ("UnitAbilityModifiers", "UnitAbilityType"),
                                  ("DynamicModifiers", "ModifierType"), ("Modifiers", "ModifierId"),
-                                 ("ModifierArguments", "ModifierId")):
+                                 ("ModifierArguments", "ModifierId"), ("GameModifiers", "ModifierId"),
+                                 ("RequirementSets", "RequirementSetId"),
+                                 ("RequirementSetRequirements", "RequirementSetId"),
+                                 ("Requirements", "RequirementId"), ("RequirementArguments", "RequirementId")):
                     try:
                         purged += con.execute("DELETE FROM \"%s\" WHERE \"%s\" LIKE 'ABN%%'" % (tbl, col)).rowcount
                     except sqlite3.Error:

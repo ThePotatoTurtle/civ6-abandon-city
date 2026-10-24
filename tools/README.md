@@ -35,7 +35,7 @@ DB paths: the newest of `%LOCALAPPDATA%\Firaxis Games\Sid Meier's Civilization V
 
 - `api_allowlist.json` is hand-maintained. It starts with only `print`, `unpack` and `include`; Lua stdlib (string, table, math, coroutine) is built in. `api_allowlist_extra.json` holds further hand additions plus `base_includes` (globals defined by base-game UI files; copied from the EFV tools).
 - Add an engine call only with evidence in `refs`: a base-game file and line, a research note, or a closed in-game spike. Entry shape: `{"ctx": {"G": "C", "UI": "C"}, "refs": [...], "note": "...", "only_paths": ["ABN_Dev/"]}`. Levels: `C` confirmed, `L` likely, `NV` new-verify, `PENDING` waits for a test. Anything but `C` prints a warning and lands in the checklist. Sections: `globals`, `static` (`Root.Member` / `Root:Method`), `methods` (name without receiver), `events` (`GameEvents.X`, `Events.X`, `LuaEvents.X`), `gameinfo` (table names), `forbidden` (extra banned names with a reason, in the extra file).
-- `engine_globals.json` lists every global the game's own Lua reads but never defines. Rebuild with `python tools\harvest_engine_globals.py [--game PATH]` (default game path: `C:\Program Files (x86)\Steam\steamapps\common\Sid Meier's Civilization VI`).
+- `engine_globals.json` lists every global the game's own Lua reads but never defines. Rebuild with `python tools\harvest_engine_globals.py [--game PATH]` (default: the Civ VI folder in whichever Steam library has it, found from the registry and `libraryfolders.vdf`).
 - Errors: calls not on the list or used in the wrong context, unknown project functions, forbidden patterns (`math.random`, `os.*` in gameplay, `pairs(` over state in gameplay, `table.unpack`, `ExposedMembers`), state changes reachable from `Events.*` handlers in gameplay, and a UI request name (`"ABN_\w+"` strings) without a gameplay handler.
 
 ## install.ps1: install and follow the log
@@ -48,8 +48,9 @@ powershell -ExecutionPolicy Bypass -File tools\install.ps1 -Uninstall     # remo
 powershell -ExecutionPolicy Bypass -File tools\install.ps1 -CheckLogs     # scan the last run's logs only
 ```
 
+- Paths: unless `-ModsDir` / `-LogsDir` are given, the first run asks for the Civ VI Mods and Logs folders (defaults are detected, including a OneDrive-redirected Documents; Enter accepts), validates them and saves them in `tools\install.local.json` (gitignored). Later runs show the saved values and ask "Use these? [Y/n]". `-Reconfigure` asks again.
 - Stops at once while Civilization VI is running. Runs `check_all.py` first; errors stop the install unless `-Force` (`-SkipChecks` skips the checks, `-Strict` fails on warnings). `-WatchOnly` tails without installing.
-- Mirrors the folders into the Mods folder (`-ModsDir`). It refuses targets outside `-ModsDir` or folders whose name does not start with `ABN`. Files deleted in the source are deleted in the copy too.
+- Mirrors the folders into the Mods folder (`-ModsDir`, default `<Documents>\My Games\Sid Meier's Civilization VI\Mods`; the Documents folder is read from Windows, so a OneDrive redirect is followed). It refuses targets outside `-ModsDir` or folders whose name does not start with `ABN`. Files deleted in the source are deleted in the copy too.
 - `-Watch` follows `Lua.log`, filtered by `-Pattern` (default `ABN|Runtime Error|Syntax Error|stack traceback`). Lua.log is buffered while you play; read it after quitting to the menu or desktop.
 - `-CheckLogs` runs `check_logs.py` on Database.log, Modding.log, Lua.log and UserInterface.log (default folder `%LOCALAPPDATA%\Firaxis Games\Sid Meier's Civilization VI\Logs`). Exit code 1 on errors that involve the mod.
 
@@ -70,3 +71,7 @@ The latest PASS/FAIL/CHECK line of an ID decides; an ID with only INFO lines sho
 ## Not ported
 
 EFV's `test_tools.py` and its fixtures were not copied; add tests for the tools here when they get changed.
+
+## package_tester.ps1: package for a friend's spike test
+
+`powershell -ExecutionPolicy Bypass -File tools\package_tester.ps1` builds `dist\ABN_SpikeTest_<devversion>\` and the matching `.zip` (ABN_Dev files exactly as the modinfo lists them, `ABN\` if it exists, plus `install_tester.ps1`, the BAT wrappers and `README_TESTER.md` from `tools	ester\`). The tester needs no Python: INSTALL.bat, UNINSTALL.bat and COLLECT_LOGS.bat run `install_tester.ps1` with `-ExecutionPolicy Bypass`.
