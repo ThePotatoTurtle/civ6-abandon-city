@@ -18,11 +18,64 @@ from dataclasses import dataclass, field
 
 TOOLS_DIR = os.path.dirname(os.path.abspath(__file__))
 PROJECT_DIR = os.path.dirname(TOOLS_DIR)
-# Documents side: Mods\ lives here (the game loads mods from this folder)
-GAME_USER_DIR = os.environ.get("ABN_CIV6_USER_DIR") or r"C:\Users\goldf\OneDrive\OneNote\My Games\Sid Meier's Civilization VI"
+def _documents_dir():
+    """The Windows Documents folder, following a redirect (OneDrive, another drive); ~/Documents elsewhere."""
+    try:
+        import winreg
+        with winreg.OpenKey(winreg.HKEY_CURRENT_USER,
+                            r"Software\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders") as k:
+            return os.path.expandvars(winreg.QueryValueEx(k, "Personal")[0])
+    except (ImportError, OSError):
+        return os.path.join(os.path.expanduser("~"), "Documents")
+
+
+def steam_libraries():
+    """Steam library roots: the install folder from the registry plus every "path" in libraryfolders.vdf."""
+    steam = None
+    try:
+        import winreg
+        for hive, key, name in ((winreg.HKEY_CURRENT_USER, r"Software\Valve\Steam", "SteamPath"),
+                                (winreg.HKEY_LOCAL_MACHINE, r"SOFTWARE\WOW6432Node\Valve\Steam", "InstallPath")):
+            try:
+                with winreg.OpenKey(hive, key) as k:
+                    steam = os.path.normpath(winreg.QueryValueEx(k, name)[0])
+                    break
+            except OSError:
+                pass
+    except ImportError:
+        pass
+    libs = [steam] if steam else []
+    if steam:
+        try:
+            with open(os.path.join(steam, "steamapps", "libraryfolders.vdf"), encoding="utf-8") as f:
+                # the vdf escapes backslashes: "C:\\Program Files (x86)\\Steam"
+                libs += [os.path.normpath(m.group(1).replace("\\\\", "\\"))
+                         for m in re.finditer(r'"path"\s+"([^"]+)"', f.read())]
+        except OSError:
+            pass
+    seen, out = set(), []
+    for lib in libs:
+        if lib.lower() not in seen:
+            seen.add(lib.lower())
+            out.append(lib)
+    return out
+
+
+def find_game_dir():
+    """The Civ VI install folder in whichever Steam library has it (None when not found)."""
+    for lib in steam_libraries():
+        p = os.path.join(lib, "steamapps", "common", "Sid Meier's Civilization VI")
+        if os.path.isdir(p):
+            return p
+    return None
+
+
+# Documents side: Mods\ lives here (the game loads mods from this folder). Override with ABN_CIV6_USER_DIR.
+GAME_USER_DIR = os.environ.get("ABN_CIV6_USER_DIR") or os.path.join(_documents_dir(), "My Games",
+                                                                  "Sid Meier's Civilization VI")
 MODS_DIR = os.path.join(GAME_USER_DIR, "Mods")
 # AppData side: live logs and the live DB cache (the Documents copies are stale, from 2023)
-GAME_APPDATA_DIR = os.path.join(os.environ.get("LOCALAPPDATA", r"C:\Users\Leon\AppData\Local"),
+GAME_APPDATA_DIR = os.path.join(os.environ.get("LOCALAPPDATA") or os.path.join(os.path.expanduser("~"), "AppData", "Local"),
                                 "Firaxis Games", "Sid Meier's Civilization VI")
 LOGS_DIR = os.environ.get("ABN_CIV6_LOGS") or os.path.join(GAME_APPDATA_DIR, "Logs")
 

@@ -3,6 +3,7 @@
 
 Usage:
     python tools/harvest_engine_globals.py [--game PATH-TO-Sid-Meiers-Civilization-VI]
+    (default: the Civ VI folder in the Steam libraries from the registry and libraryfolders.vdf)
 
 Writes tools/engine_globals.json. A name counts as an engine global when the game's Lua (Base + DLC UI,
 gameplay and scenario scripts) reads it as a global in at least --min-files files and no game Lua file
@@ -23,7 +24,7 @@ from collections import defaultdict
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import abnlib as L  # noqa: E402
 
-DEFAULT_GAME = r"C:\Program Files (x86)\Steam\steamapps\common\Sid Meier's Civilization VI"
+DEFAULT_GAME = L.find_game_dir()
 OUT = os.path.join(L.TOOLS_DIR, "engine_globals.json")
 LOWERCASE_ENGINE = {"include", "hstructure", "hmake"}
 # enum / manager style names need fewer sightings than other PascalCase names
@@ -37,6 +38,8 @@ def main(argv=None):
     ap.add_argument("--game", default=DEFAULT_GAME)
     ap.add_argument("--min-files", type=int, default=2)
     a = ap.parse_args(argv)
+    if not a.game:
+        ap.error("Civ VI install not found in any Steam library; pass --game")
     roots = [os.path.join(a.game, "Base"), os.path.join(a.game, "DLC")]
     roots = [r for r in roots if os.path.isdir(r)]
     if not roots:
