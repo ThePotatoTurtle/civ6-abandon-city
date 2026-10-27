@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- ABN_Text_UI.xml (UpdateText). Button, tooltip and popup text. Owner: WP8.
+     Player-visible text: no mod prefix, no en or em dashes. -->
+<GameData>
+	<LocalizedText>
+		<!-- Button -->
+		<Row Tag="LOC_ABN_BUTTON_ABANDON" Language="en_US">
+			<Text>Abandon City</Text>
+		</Row>
+		<Row Tag="LOC_ABN_BUTTON_CANCEL" Language="en_US">
+			<Text>Cancel Abandonment</Text>
+		</Row>
+
+		<!-- Tooltip bodies -->
+		<Row Tag="LOC_ABN_TT_START" Language="en_US">
+			<Text>The city will be gone in {1_T} {1_T : plural 1?turn; other?turns;}. Population by turn: {2_Sched}, then removed.[NEWLINE]Your cities within {3_R} tiles lose {4_D} loyalty per turn for {5_TT} {5_TT : plural 1?turn; other?turns;}.</Text>
+		</Row>
+		<Row Tag="LOC_ABN_TT_CANCEL" Language="en_US">
+			<Text>{1_Left} {1_Left : plural 1?turn; other?turns;} left. The city is removed at the end of the last one.[NEWLINE]Population from this turn: {2_Sched}.[NEWLINE]Your cities within {3_R} tiles lose {4_D} loyalty per turn for {5_N} more {5_N : plural 1?turn; other?turns;}.</Text>
+		</Row>
+
+		<!-- Why the button is disabled -->
+		<Row Tag="LOC_ABN_BLOCK_SIEGE" Language="en_US">
+			<Text>Under siege or damaged in the last 5 turns</Text>
+		</Row>
+		<Row Tag="LOC_ABN_BLOCK_ENEMY_NEAR" Language="en_US">
+			<Text>Enemy forces nearby</Text>
+		</Row>
+		<Row Tag="LOC_ABN_BLOCK_CAPITAL" Language="en_US">
+			<Text>Your capital can't be abandoned</Text>
+		</Row>
+		<Row Tag="LOC_ABN_BLOCK_LAST_CITY" Language="en_US">
+			<Text>Your last city can't be abandoned</Text>
+		</Row>
+		<Row Tag="LOC_ABN_BLOCK_ORIGINAL_CAPITAL" Language="en_US">
+			<Text>Original capitals can't be abandoned</Text>
+		</Row>
+		<Row Tag="LOC_ABN_BLOCK_COOLDOWN" Language="en_US">
+			<Text>Can restart in {1_N} {1_N : plural 1?turn; other?turns;}</Text>
+		</Row>
+		<Row Tag="LOC_ABN_BLOCK_ACTIVE" Language="en_US">
+			<Text>This city is already being abandoned</Text>
+		</Row>
+		<Row Tag="LOC_ABN_BLOCK_UNKNOWN" Language="en_US">
+			<Text>This city can't be abandoned right now</Text>
+		</Row>
+
+		<!-- Confirmation popup -->
+		<Row Tag="LOC_ABN_POPUP_TITLE" Language="en_US">
+			<Text>Abandon {1_City}?</Text>
+		</Row>
+		<Row Tag="LOC_ABN_POPUP_BODY" Language="en_US">
+			<Text>It will be gone in {1_T} {1_T : plural 1?turn; other?turns;}. This turn counts as turn 1.</Text>
+		</Row>
+		<Row Tag="LOC_ABN_POPUP_TURN" Language="en_US">
+			<Text>Turn {1_Turn}: {2_Pop}</Text>
+		</Row>
+		<Row Tag="LOC_ABN_POPUP_TURN_LAST" Language="en_US">
+			<Text>Turn {1_Turn}: {2_Pop}, then removed at the end of the turn</Text>
+		</Row>
+		<Row Tag="LOC_ABN_POPUP_DEBUFF" Language="en_US">
+			<Text>Your cities within {1_R} tiles lose {2_D} loyalty per turn for {3_TT} {3_TT : plural 1?turn; other?turns;} ({4_T} now, {4_T} after).</Text>
+		</Row>
+		<Row Tag="LOC_ABN_POPUP_AFFECTED" Language="en_US">
+			<Text>Affected: {1_List}</Text>
+		</Row>
+		<Row Tag="LOC_ABN_POPUP_AFFECTED_NONE" Language="en_US">
+			<Text>Affected: none</Text>
+		</Row>
+		<Row Tag="LOC_ABN_POPUP_WARN" Language="en_US">
+			<Text>Warning: these cities are already under 50 loyalty and could revolt or flip: {1_List}</Text>
+		</Row>
+		<Row Tag="LOC_ABN_POPUP_CITY_LOYALTY" Language="en_US">
+			<Text>{1_City} ({2_Loyalty})</Text>
+		</Row>
+		<Row Tag="LOC_ABN_POPUP_CONFIRM" Language="en_US">
+			<Text>Confirm</Text>
+		</Row>
+		<Row Tag="LOC_ABN_POPUP_CANCEL" Language="en_US">
+			<Text>Cancel</Text>
+		</Row>
+
+		<!-- Cancel popup -->
+		<Row Tag="LOC_ABN_CANCEL_TITLE" Language="en_US">
+			<Text>Stop abandoning {1_City}?</Text>
+		</Row>
+		<Row Tag="LOC_ABN_CANCEL_BODY" Language="en_US">
+			<Text>Population already lost stays lost. You can restart in {1_N} {1_N : plural 1?turn; other?turns;}. Your nearby cities keep losing {2_D} loyalty per turn for {3_E} more {3_E : plural 1?turn; other?turns;}.</Text>
+		</Row>
+		<Row Tag="LOC_ABN_CANCEL_KEEP" Language="en_US">
+			<Text>Keep Abandoning</Text>
+		</Row>
+	</LocalizedText>
+</GameData>

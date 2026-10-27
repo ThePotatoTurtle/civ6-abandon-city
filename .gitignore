@@ -11,14 +11,21 @@ TESTING_*.md
 HANDOFF.md
 research/
 spike/
+
 # local tooling
 .claude/
 __pycache__/
 *.pyc
 *.log
+
 # drafts and packages
 workshop/
 dist/
+
 # generated from the game DB
 tests/offline/data/gameinfo_data.lua
 install.local.json
+
+# tools and tests
+tools/
+tests/

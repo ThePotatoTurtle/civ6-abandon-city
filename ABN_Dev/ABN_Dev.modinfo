@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Mod id="3e330bb9-9538-494e-8e13-44d6cc1c6a5c" version="1">
   <Properties>
-    <Name>Abandon Cities Spike Tools (testing only) v0.0.0.1</Name>
-    <Teaser>Spike test panel for Abandon Cities. Not for normal play.</Teaser>
-    <Description>Developer panel for the Abandon Cities spike session: test cities, population cuts, loyalty debuff variants, siege and damage readings, custom notifications, a city panel test button and city removal probes. Open it with Ctrl+Shift+D or the DEV button on the launch bar. Writes to Lua.log. Works on its own (the Abandon Cities mod is not needed). Start a new game with it. Never enable it in a real game.</Description>
+    <Name>Abandon Cities Dev Tools (testing only) v0.1.0.0</Name>
+    <Teaser>Test panel for Abandon Cities. Not for normal play.</Teaser>
+    <Description>Developer panel for testing Abandon Cities. One-click scenarios (test cities of chosen sizes, neighbours at exact distances, enemies at 6 and 7 tiles, damage, siege, war, the last-city case), a checked Start and Cancel that send the real requests, and a turn checker that writes PASS or FAIL lines to Lua.log for the population schedule, the removal turn, the debuff windows, the loyalty flags, the cooldown and the auto-cancel. Open it with Ctrl+Shift+D or the DEV button on the launch bar. Requires the Abandon Cities mod. Start a new game with it. Never enable it in a real game.</Description>
     <Authors>ThePotatoTurtle</Authors>
     <AffectsSavedGames>1</AffectsSavedGames>
     <CompatibleVersions>2.0</CompatibleVersions>
@@ -11,6 +11,7 @@
 
   <Dependencies>
     <Mod id="4873eb62-8ccc-4574-b784-dda455e74e68" title="Expansion: Gathering Storm" />
+    <Mod id="cde58bfe-d9e8-4ecd-86b0-877cfc0d2085" title="Abandon Cities" />
   </Dependencies>
 
   <ActionCriteria>
@@ -20,18 +21,14 @@
   </ActionCriteria>
 
   <InGameActions>
-    <UpdateDatabase id="ABN_DEV_Data" criteria="ABN_DEV_XP2">
+    <ImportFiles id="ABN_DEV_Imports" criteria="ABN_DEV_XP2">
       <Properties>
         <LoadOrder>14000</LoadOrder>
       </Properties>
-      <File>Data/ABN_Dev_Spike.xml</File>
-    </UpdateDatabase>
-    <UpdateText id="ABN_DEV_Text" criteria="ABN_DEV_XP2">
-      <Properties>
-        <LoadOrder>14000</LoadOrder>
-      </Properties>
-      <File>Data/ABN_Dev_Text.xml</File>
-    </UpdateText>
+      <File>Scripts/ABN_Dev_Core.lua</File>
+      <File>Scripts/ABN_Dev_Check.lua</File>
+      <File>Scripts/ABN_Dev_Scenario.lua</File>
+    </ImportFiles>
     <AddGameplayScripts id="ABN_DEV_Gameplay" criteria="ABN_DEV_XP2">
       <Properties>
         <LoadOrder>14000</LoadOrder>
@@ -48,8 +45,9 @@
   </InGameActions>
 
   <Files>
-    <File>Data/ABN_Dev_Spike.xml</File>
-    <File>Data/ABN_Dev_Text.xml</File>
+    <File>Scripts/ABN_Dev_Core.lua</File>
+    <File>Scripts/ABN_Dev_Check.lua</File>
+    <File>Scripts/ABN_Dev_Scenario.lua</File>
     <File>Scripts/ABN_Dev_Gameplay.lua</File>
     <File>UI/ABN_Dev_Panel.lua</File>
     <File>UI/ABN_Dev_Panel.xml</File>

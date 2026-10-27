@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- ABN_Text_Core.xml (UpdateText). Notification text and cancel reasons. Owner: WP4.
+     LOC_ABN_MOD_* (mod browser text) live in the ABN.modinfo LocalizedText block,
+     not here (EFV pattern). Notification keys: <base>_MESSAGE / _SUMMARY for other civs
+     ({1_Civ} first), <base>_OWN_* for the abandoning player (header of ABN_Notify.lua). -->
+<GameData>
+	<LocalizedText>
+		<Row Tag="LOC_ABN_PLAYER_GENERIC" Language="en_US">
+			<Text>A civilization</Text>
+		</Row>
+		<Row Tag="LOC_ABN_NOTIF_STARTED_MESSAGE" Language="en_US">
+			<Text>{1_Civ} is abandoning {2_City}</Text>
+		</Row>
+		<Row Tag="LOC_ABN_NOTIF_STARTED_SUMMARY" Language="en_US">
+			<Text>{1_Civ} is abandoning {2_City}. It will be gone in {3_Turns} {3_Turns : plural 1?turn; other?turns;}.</Text>
+		</Row>
+		<Row Tag="LOC_ABN_NOTIF_STARTED_OWN_MESSAGE" Language="en_US">
+			<Text>Abandoning {1_City}</Text>
+		</Row>
+		<Row Tag="LOC_ABN_NOTIF_STARTED_OWN_SUMMARY" Language="en_US">
+			<Text>{1_City} will be gone in {2_Turns} {2_Turns : plural 1?turn; other?turns;}. Your nearby cities lose loyalty while it runs and for a while afterwards. You can cancel from the city panel.</Text>
+		</Row>
+		<Row Tag="LOC_ABN_NOTIF_TICK_MESSAGE" Language="en_US">
+			<Text>{1_City}: {2_Turns} {2_Turns : plural 1?turn; other?turns;} left</Text>
+		</Row>
+		<Row Tag="LOC_ABN_NOTIF_TICK_SUMMARY" Language="en_US">
+			<Text>{1_City} will be gone in {2_Turns} {2_Turns : plural 1?turn; other?turns;}. You can still cancel from the city panel.</Text>
+		</Row>
+		<Row Tag="LOC_ABN_NOTIF_CANCELLED_MESSAGE" Language="en_US">
+			<Text>{1_Civ} cancelled the abandonment of {2_City}</Text>
+		</Row>
+		<Row Tag="LOC_ABN_NOTIF_CANCELLED_SUMMARY" Language="en_US">
+			<Text>{1_Civ} is keeping {2_City}.</Text>
+		</Row>
+		<Row Tag="LOC_ABN_NOTIF_CANCELLED_OWN_MESSAGE" Language="en_US">
+			<Text>Abandonment of {1_City} cancelled</Text>
+		</Row>
+		<Row Tag="LOC_ABN_NOTIF_CANCELLED_OWN_SUMMARY" Language="en_US">
+			<Text>{1_City} stays. The loyalty penalty on your nearby cities lasts another {2_Turns} {2_Turns : plural 1?turn; other?turns;}. You can abandon it again after a short cooldown.</Text>
+		</Row>
+		<Row Tag="LOC_ABN_NOTIF_AUTOCANCEL_MESSAGE" Language="en_US">
+			<Text>The abandonment of {2_City} by {1_Civ} was called off</Text>
+		</Row>
+		<Row Tag="LOC_ABN_NOTIF_AUTOCANCEL_SUMMARY" Language="en_US">
+			<Text>{1_Civ} is keeping {2_City}.</Text>
+		</Row>
+		<Row Tag="LOC_ABN_NOTIF_AUTOCANCEL_OWN_MESSAGE" Language="en_US">
+			<Text>Abandonment of {1_City} stopped</Text>
+		</Row>
+		<Row Tag="LOC_ABN_NOTIF_AUTOCANCEL_OWN_SUMMARY" Language="en_US">
+			<Text>{1_City} stays because {2_Reason}. There is no cooldown, but the loyalty penalty on your nearby cities lasts another {3_Turns} {3_Turns : plural 1?turn; other?turns;}.</Text>
+		</Row>
+		<Row Tag="LOC_ABN_NOTIF_AUTOCANCEL_LOST_MESSAGE" Language="en_US">
+			<Text>{1_Civ} lost {2_City} during its abandonment</Text>
+		</Row>
+		<Row Tag="LOC_ABN_NOTIF_AUTOCANCEL_LOST_SUMMARY" Language="en_US">
+			<Text>{2_City} left the control of {1_Civ}, so its abandonment ended.</Text>
+		</Row>
+		<Row Tag="LOC_ABN_NOTIF_AUTOCANCEL_LOST_OWN_MESSAGE" Language="en_US">
+			<Text>Lost {1_City} during its abandonment</Text>
+		</Row>
+		<Row Tag="LOC_ABN_NOTIF_AUTOCANCEL_LOST_OWN_SUMMARY" Language="en_US">
+			<Text>{1_City} was captured or changed hands, so the abandonment ended. There is no cooldown, but the loyalty penalty on your nearby cities lasts another {2_Turns} {2_Turns : plural 1?turn; other?turns;}.</Text>
+		</Row>
+		<Row Tag="LOC_ABN_NOTIF_REMOVED_MESSAGE" Language="en_US">
+			<Text>{2_City} has been abandoned</Text>
+		</Row>
+		<Row Tag="LOC_ABN_NOTIF_REMOVED_SUMMARY" Language="en_US">
+			<Text>{1_Civ} has abandoned {2_City}. The city is gone.</Text>
+		</Row>
+		<Row Tag="LOC_ABN_NOTIF_REMOVED_OWN_MESSAGE" Language="en_US">
+			<Text>{1_City} has been abandoned</Text>
+		</Row>
+		<Row Tag="LOC_ABN_NOTIF_REMOVED_OWN_SUMMARY" Language="en_US">
+			<Text>{1_City} is gone. The loyalty penalty on your nearby cities lasts another {2_Turns} {2_Turns : plural 1?turn; other?turns;}.</Text>
+		</Row>
+		<Row Tag="LOC_ABN_NOTIF_DEBUFF_ENDED_MESSAGE" Language="en_US">
+			<Text>Loyalty penalty ended</Text>
+		</Row>
+		<Row Tag="LOC_ABN_NOTIF_DEBUFF_ENDED_SUMMARY" Language="en_US">
+			<Text>The loyalty penalty from abandoning {1_City} has ended.</Text>
+		</Row>
+		<Row Tag="LOC_ABN_CANCEL_REASON_ACTIVE" Language="en_US">
+			<Text>it is already being abandoned</Text>
+		</Row>
+		<Row Tag="LOC_ABN_CANCEL_REASON_COOLDOWN" Language="en_US">
+			<Text>it is on cooldown</Text>
+		</Row>
+		<Row Tag="LOC_ABN_CANCEL_REASON_CAPITAL" Language="en_US">
+			<Text>it is your capital</Text>
+		</Row>
+		<Row Tag="LOC_ABN_CANCEL_REASON_LAST_CITY" Language="en_US">
+			<Text>it is your last city</Text>
+		</Row>
+		<Row Tag="LOC_ABN_CANCEL_REASON_ORIGINAL_CAPITAL" Language="en_US">
+			<Text>it is your original capital</Text>
+		</Row>
+		<Row Tag="LOC_ABN_CANCEL_REASON_SIEGE" Language="en_US">
+			<Text>it is under siege</Text>
+		</Row>
+		<Row Tag="LOC_ABN_CANCEL_REASON_DAMAGED" Language="en_US">
+			<Text>it was damaged recently</Text>
+		</Row>
+		<Row Tag="LOC_ABN_CANCEL_REASON_ENEMY_NEAR" Language="en_US">
+			<Text>an enemy military unit is too close</Text>
+		</Row>
+		<Row Tag="LOC_ABN_CANCEL_REASON_GENERIC" Language="en_US">
+			<Text>a blocking condition appeared</Text>
+		</Row>
+	</LocalizedText>
+</GameData>

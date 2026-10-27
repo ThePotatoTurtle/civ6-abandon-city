@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- ABN_Loyalty.xml (UpdateDatabase). PLAN 7, branch L-B2 (DECISIONS #26). Owner: WP5.
+
+     Loyalty ladder: five modifiers ABN_LOY_BIT_<n> (n = 1, 2, 4, 8, 16 = ABN_Config.LOY_BITS),
+     MODIFIER_SINGLE_CITY_ADJUST_IDENTITY_PER_TURN with Amount -n, each gated by its own plot
+     property ABN_DBIT_<n> >= 1 (REQUIREMENT_PLOT_PROPERTY_MATCHES on the city's plot). Each one is
+     attached to every city by a GameModifiers row of type MODIFIER_ALL_CITIES_ATTACH_MODIFIER.
+     ABN_Loyalty.lua sets ABN_DBIT_<n> to 1 or 0 on a city's plot from ABN_Config.Bits(D sum),
+     so a city loses D loyalty per turn (D up to 31).
+
+     The rows copy the spike rows of ABN_Dev\Data\ABN_Dev_Spike.xml (ABN_SPK_LOY_BIT_*) that were
+     verified in game (SPIKES.md section 4: shows as "Other effects -6", re-levels to -9 and clears
+     at once), renamed only: ABN_SPK_LOY_BIT_<n> -> ABN_LOY_BIT_<n>, ABN_SPK_ATTACH_BIT_<n> ->
+     ABN_LOY_ATTACH_BIT_<n>, ABN_SPK_REQS_DBIT_<n> -> ABN_LOY_REQS_DBIT_<n>, ABN_SPK_REQ_DBIT_<n> ->
+     ABN_LOY_REQ_DBIT_<n>, plot property ABN_SPK_DBIT_<n> -> ABN_DBIT_<n>. No ModifierStrings or
+     text rows: the city panel shows the generic "Other effects" line, never the internal prefix. -->
+<GameData>
+	<Modifiers>
+		<Row ModifierId="ABN_LOY_BIT_1" ModifierType="MODIFIER_SINGLE_CITY_ADJUST_IDENTITY_PER_TURN" SubjectRequirementSetId="ABN_LOY_REQS_DBIT_1"/>
+		<Row ModifierId="ABN_LOY_ATTACH_BIT_1" ModifierType="MODIFIER_ALL_CITIES_ATTACH_MODIFIER"/>
+		<Row ModifierId="ABN_LOY_BIT_2" ModifierType="MODIFIER_SINGLE_CITY_ADJUST_IDENTITY_PER_TURN" SubjectRequirementSetId="ABN_LOY_REQS_DBIT_2"/>
+		<Row ModifierId="ABN_LOY_ATTACH_BIT_2" ModifierType="MODIFIER_ALL_CITIES_ATTACH_MODIFIER"/>
+		<Row ModifierId="ABN_LOY_BIT_4" ModifierType="MODIFIER_SINGLE_CITY_ADJUST_IDENTITY_PER_TURN" SubjectRequirementSetId="ABN_LOY_REQS_DBIT_4"/>
+		<Row ModifierId="ABN_LOY_ATTACH_BIT_4" ModifierType="MODIFIER_ALL_CITIES_ATTACH_MODIFIER"/>
+		<Row ModifierId="ABN_LOY_BIT_8" ModifierType="MODIFIER_SINGLE_CITY_ADJUST_IDENTITY_PER_TURN" SubjectRequirementSetId="ABN_LOY_REQS_DBIT_8"/>
+		<Row ModifierId="ABN_LOY_ATTACH_BIT_8" ModifierType="MODIFIER_ALL_CITIES_ATTACH_MODIFIER"/>
+		<Row ModifierId="ABN_LOY_BIT_16" ModifierType="MODIFIER_SINGLE_CITY_ADJUST_IDENTITY_PER_TURN" SubjectRequirementSetId="ABN_LOY_REQS_DBIT_16"/>
+		<Row ModifierId="ABN_LOY_ATTACH_BIT_16" ModifierType="MODIFIER_ALL_CITIES_ATTACH_MODIFIER"/>
+	</Modifiers>
+	<ModifierArguments>
+		<Row ModifierId="ABN_LOY_BIT_1" Name="Amount" Value="-1"/>
+		<Row ModifierId="ABN_LOY_ATTACH_BIT_1" Name="ModifierId" Value="ABN_LOY_BIT_1"/>
+		<Row ModifierId="ABN_LOY_BIT_2" Name="Amount" Value="-2"/>
+		<Row ModifierId="ABN_LOY_ATTACH_BIT_2" Name="ModifierId" Value="ABN_LOY_BIT_2"/>
+		<Row ModifierId="ABN_LOY_BIT_4" Name="Amount" Value="-4"/>
+		<Row ModifierId="ABN_LOY_ATTACH_BIT_4" Name="ModifierId" Value="ABN_LOY_BIT_4"/>
+		<Row ModifierId="ABN_LOY_BIT_8" Name="Amount" Value="-8"/>
+		<Row ModifierId="ABN_LOY_ATTACH_BIT_8" Name="ModifierId" Value="ABN_LOY_BIT_8"/>
+		<Row ModifierId="ABN_LOY_BIT_16" Name="Amount" Value="-16"/>
+		<Row ModifierId="ABN_LOY_ATTACH_BIT_16" Name="ModifierId" Value="ABN_LOY_BIT_16"/>
+	</ModifierArguments>
+	<GameModifiers>
+		<Row ModifierId="ABN_LOY_ATTACH_BIT_1"/>
+		<Row ModifierId="ABN_LOY_ATTACH_BIT_2"/>
+		<Row ModifierId="ABN_LOY_ATTACH_BIT_4"/>
+		<Row ModifierId="ABN_LOY_ATTACH_BIT_8"/>
+		<Row ModifierId="ABN_LOY_ATTACH_BIT_16"/>
+	</GameModifiers>
+	<RequirementSets>
+		<Row RequirementSetId="ABN_LOY_REQS_DBIT_1" RequirementSetType="REQUIREMENTSET_TEST_ALL"/>
+		<Row RequirementSetId="ABN_LOY_REQS_DBIT_2" RequirementSetType="REQUIREMENTSET_TEST_ALL"/>
+		<Row RequirementSetId="ABN_LOY_REQS_DBIT_4" RequirementSetType="REQUIREMENTSET_TEST_ALL"/>
+		<Row RequirementSetId="ABN_LOY_REQS_DBIT_8" RequirementSetType="REQUIREMENTSET_TEST_ALL"/>
+		<Row RequirementSetId="ABN_LOY_REQS_DBIT_16" RequirementSetType="REQUIREMENTSET_TEST_ALL"/>
+	</RequirementSets>
+	<RequirementSetRequirements>
+		<Row RequirementSetId="ABN_LOY_REQS_DBIT_1" RequirementId="ABN_LOY_REQ_DBIT_1"/>
+		<Row RequirementSetId="ABN_LOY_REQS_DBIT_2" RequirementId="ABN_LOY_REQ_DBIT_2"/>
+		<Row RequirementSetId="ABN_LOY_REQS_DBIT_4" RequirementId="ABN_LOY_REQ_DBIT_4"/>
+		<Row RequirementSetId="ABN_LOY_REQS_DBIT_8" RequirementId="ABN_LOY_REQ_DBIT_8"/>
+		<Row RequirementSetId="ABN_LOY_REQS_DBIT_16" RequirementId="ABN_LOY_REQ_DBIT_16"/>
+	</RequirementSetRequirements>
+	<Requirements>
+		<Row RequirementId="ABN_LOY_REQ_DBIT_1" RequirementType="REQUIREMENT_PLOT_PROPERTY_MATCHES"/>
+		<Row RequirementId="ABN_LOY_REQ_DBIT_2" RequirementType="REQUIREMENT_PLOT_PROPERTY_MATCHES"/>
+		<Row RequirementId="ABN_LOY_REQ_DBIT_4" RequirementType="REQUIREMENT_PLOT_PROPERTY_MATCHES"/>
+		<Row RequirementId="ABN_LOY_REQ_DBIT_8" RequirementType="REQUIREMENT_PLOT_PROPERTY_MATCHES"/>
+		<Row RequirementId="ABN_LOY_REQ_DBIT_16" RequirementType="REQUIREMENT_PLOT_PROPERTY_MATCHES"/>
+	</Requirements>
+	<RequirementArguments>
+		<Row RequirementId="ABN_LOY_REQ_DBIT_1" Name="PropertyName" Value="ABN_DBIT_1"/>
+		<Row RequirementId="ABN_LOY_REQ_DBIT_1" Name="PropertyMinimum" Value="1"/>
+		<Row RequirementId="ABN_LOY_REQ_DBIT_2" Name="PropertyName" Value="ABN_DBIT_2"/>
+		<Row RequirementId="ABN_LOY_REQ_DBIT_2" Name="PropertyMinimum" Value="1"/>
+		<Row RequirementId="ABN_LOY_REQ_DBIT_4" Name="PropertyName" Value="ABN_DBIT_4"/>
+		<Row RequirementId="ABN_LOY_REQ_DBIT_4" Name="PropertyMinimum" Value="1"/>
+		<Row RequirementId="ABN_LOY_REQ_DBIT_8" Name="PropertyName" Value="ABN_DBIT_8"/>
+		<Row RequirementId="ABN_LOY_REQ_DBIT_8" Name="PropertyMinimum" Value="1"/>
+		<Row RequirementId="ABN_LOY_REQ_DBIT_16" Name="PropertyName" Value="ABN_DBIT_16"/>
+		<Row RequirementId="ABN_LOY_REQ_DBIT_16" Name="PropertyMinimum" Value="1"/>
+	</RequirementArguments>
+</GameData>

@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Mod id="cde58bfe-d9e8-4ecd-86b0-877cfc0d2085" version="1">
+	<Properties>
+		<Name>LOC_ABN_MOD_TITLE</Name>
+		<Teaser>LOC_ABN_MOD_TEASER</Teaser>
+		<Description>LOC_ABN_MOD_DESCRIPTION</Description>
+		<Authors>ThePotatoTurtle</Authors>
+		<AffectsSavedGames>1</AffectsSavedGames>
+		<CompatibleVersions>2.0</CompatibleVersions>
+	</Properties>
+
+	<Dependencies>
+		<Mod id="4873eb62-8ccc-4574-b784-dda455e74e68" title="Expansion: Gathering Storm"/>
+	</Dependencies>
+
+	<ActionCriteria>
+		<Criteria id="ABN_XP2">
+			<GameCoreInUse>Expansion2</GameCoreInUse>
+		</Criteria>
+	</ActionCriteria>
+
+	<InGameActions>
+		<!-- 1. Notification types (PLAN 8) and the L-B2 loyalty ladder (PLAN 7). -->
+		<UpdateDatabase id="ABN_Data" criteria="ABN_XP2">
+			<File>Data/ABN_Notifications.sql</File>
+			<File>Data/ABN_Loyalty.xml</File>
+		</UpdateDatabase>
+
+		<!-- 2. Notification icon aliases (PLAN 8). -->
+		<UpdateIcons id="ABN_Icons" criteria="ABN_XP2">
+			<File>Data/ABN_Icons.sql</File>
+		</UpdateIcons>
+
+		<!-- 3. In-game text. -->
+		<UpdateText id="ABN_Text" criteria="ABN_XP2">
+			<File>Data/ABN_Text_Core.xml</File>
+			<File>Data/ABN_Text_UI.xml</File>
+		</UpdateText>
+
+		<!-- 4. Modules for include(). -->
+		<ImportFiles id="ABN_Imports" criteria="ABN_XP2">
+			<File>Scripts/ABN_Config.lua</File>
+			<File>Scripts/ABN_Util.lua</File>
+			<File>Scripts/ABN_Rules.lua</File>
+			<File>Scripts/ABN_State.lua</File>
+			<File>Scripts/ABN_Damage.lua</File>
+			<File>Scripts/ABN_Loyalty.lua</File>
+			<File>Scripts/ABN_Removal.lua</File>
+			<File>Scripts/ABN_Notify.lua</File>
+			<File>UI/ABN_UIShared.lua</File>
+		</ImportFiles>
+
+		<!-- 5. Gameplay entry point. -->
+		<AddGameplayScripts id="ABN_Gameplay" criteria="ABN_XP2">
+			<File>Scripts/ABN_Gameplay.lua</File>
+		</AddGameplayScripts>
+
+		<!-- 6. UI context: the city panel button (PLAN 9). -->
+		<AddUserInterfaces id="ABN_UI" criteria="ABN_XP2">
+			<Properties>
+				<Context>InGame</Context>
+			</Properties>
+			<File>UI/ABN_CityButton.xml</File>
+		</AddUserInterfaces>
+	</InGameActions>
+
+	<!-- Mod browser text (front end). Defined only here, not in the Data text files. -->
+	<LocalizedText>
+		<Text id="LOC_ABN_MOD_TITLE">
+			<en_US>Abandon Cities v0.1.0</en_US>
+		</Text>
+		<Text id="LOC_ABN_MOD_TEASER">
+			<en_US>Abandon a city: its population shrinks over a few turns, then the city is removed.</en_US>
+		</Text>
+		<Text id="LOC_ABN_MOD_DESCRIPTION">
+			<en_US>Version 0.1.0.[NEWLINE][NEWLINE]Abandon a city of your own. Its population shrinks over a few turns and the city is then removed, while your nearby cities lose loyalty for a while.[NEWLINE][NEWLINE]Requires Gathering Storm.</en_US>
+		</Text>
+	</LocalizedText>
+
+	<Files>
+		<File>Data/ABN_Notifications.sql</File>
+		<File>Data/ABN_Loyalty.xml</File>
+		<File>Data/ABN_Icons.sql</File>
+		<File>Data/ABN_Text_Core.xml</File>
+		<File>Data/ABN_Text_UI.xml</File>
+		<File>Scripts/ABN_Config.lua</File>
+		<File>Scripts/ABN_Util.lua</File>
+		<File>Scripts/ABN_Rules.lua</File>
+		<File>Scripts/ABN_State.lua</File>
+		<File>Scripts/ABN_Damage.lua</File>
+		<File>Scripts/ABN_Loyalty.lua</File>
+		<File>Scripts/ABN_Removal.lua</File>
+		<File>Scripts/ABN_Notify.lua</File>
+		<File>Scripts/ABN_Gameplay.lua</File>
+		<File>UI/ABN_UIShared.lua</File>
+		<File>UI/ABN_CityButton.xml</File>
+		<File>UI/ABN_CityButton.lua</File>
+	</Files>
+</Mod>

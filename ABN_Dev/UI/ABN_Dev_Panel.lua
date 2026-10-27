@@ -1,31 +1,46 @@
 -- ===========================================================================
--- ABN_Dev_Panel.lua  (ABN_Dev spike build 0.0.0.1, WP0; SPIKES.md)
+-- ABN_Dev_Panel.lua  (ABN_Dev 0.1.0.0, WP9; PLAN 12)
 -- Context: UI (AddUserInterfaces, Context InGame). TESTING ONLY.
 --
 -- Ctrl+Shift+D or the launch bar "DEV" button toggles the panel
--- (EFV_Dev_Panel.lua:2290-2322 pattern). One button per spike step; gameplay
--- steps go to Scripts/ABN_Dev_Gameplay.lua as one flat EXECUTE_SCRIPT request
---   { OnStart = "ABN_Dev", cmd = "...", stamp = n }
--- (EFV_Dev_Panel.lua:241-262). UI-only spike parts run here: the UI half of
--- the P probes, the S1 raze command (U) and its hotseat guard, the S3
--- loyalty breakdown, the S4 UI siege/damage reads and the S6 city panel
--- button.
+-- (EFV_Dev_Panel.lua:2290-2322 pattern). Buttons send one flat request
+--   { OnStart = "ABN_Dev", cmd = "...", stamp = n, [cityID, x, y of the open city] }
+-- (EFV_Dev_Panel.lua:241-262) to Scripts/ABN_Dev_Gameplay.lua. The checked
+-- START and CANCEL buttons run a short sequence, one step per update tick:
+--   START : ABN_Dev arm_start -> the real ABN_Start request -> ABN_Dev check
+--   CANCEL: ABN_Dev arm_cancel -> the real ABN_Cancel request -> ABN_Dev check
+-- so the mod is driven through exactly the requests its own button sends,
+-- and the dev tools record the click-time facts around them.
 --
--- Results: the panel shows the last gameplay lines (Game property
--- ABN_SpikeLast, written by gameplay) and the last UI lines, re-read on the
--- update tick, so Leon can read the outcome even when Lua.log is lost.
--- The UI writes no game state; the S1 RAZE command is the owner's own city
--- command, issued only for the local player's city.
+-- The target of every command is the city open in the city panel (when it is
+-- yours), else the focus city, else the capital.
+--
+-- Results: the panel shows the latest gameplay lines (Game property
+-- ABN_DevLast, written by gameplay) and the UI lines, re-read on the update
+-- tick. The UI half of "Probe blockers" compares ABN_Rules.FirstBlocker run
+-- in this context with the gameplay answer. The UI writes no game state.
 --
 -- AddUserInterfaces contexts load HIDDEN: Initialize calls
 -- ContextPtr:SetHide(false); only Controls.Main is toggled.
 -- ===========================================================================
 include("InstanceManager")
+include("ABN_Config")
+include("ABN_Rules")
 
-local PREFIX = "[ABN][SPIKE]"
-local DEV_VERSION = "0.0.0.1"
-local UI_MAX = 10
-local POLL_SECONDS = 0.5
+-- ABN:GLOBALS ABN_Config ABN_Rules
+local PREFIX = "[ABN][DEV]"
+local DEV_VERSION = "0.1.0.0"
+local UI_MAX = 8
+local POLL_SECONDS = 0.4
+local HOLD_TICKS = 2            -- ticks to wait after a real ABN_* request
+local ACK_TIMEOUT_TICKS = 12    -- ticks to wait for the gameplay answer
+
+local KEY_STATE = "ABN_DevState"
+local KEY_TALLY = "ABN_DevTally"
+local KEY_LAST = "ABN_DevLast"
+local KEY_CITIES = "ABN_DevCities"
+local KEY_PROBE = "ABN_DevProbe"
+local KEY_STAMP = "ABN_DevStamp"
 
 local m_ButtonIM = InstanceManager:new("DevButtonInstance", "Button", Controls.ButtonStack)
 local m_HeaderIM = InstanceManager:new("DevHeaderInstance", "Header", Controls.ButtonStack)
@@ -37,10 +52,12 @@ local m_StampN = 0
 local m_Clock = 0
 local m_NextPoll = 0
 local m_LastSig = ""
-local m_Pending = {}          -- cmd -> true: run the UI half when the gameplay answer arrives
-local m_S6Target = nil
-local m_S6Where = nil
-local m_HSDoneSeq = -1        -- S1 HS: the arm (hsSeq) already issued on this machine
+local m_UISeq = 0
+local m_Pending = {}        -- {stamp, fn, label}: UI halves that wait for the gameplay answer
+local m_Queue = {}          -- steps of a running sequence
+local m_WaitStamp = nil
+local m_WaitTicks = 0
+local m_Hold = 0
 
 -- ---------------------------------------------------------------------------
 -- Helpers
@@ -68,22 +85,13 @@ local function UILog(id, text)
 	while #m_UILines > UI_MAX do table.remove(m_UILines, 1) end
 end
 
-local function Has(obj, name)
-	if obj == nil then return false end
-	local ok, t = pcall(function() return type(obj[name]) end)
-	return ok and t == "function"
-end
-
-local function M(obj, name, fn)
-	if not Has(obj, name) then return false, "MISSING" end
-	local ok, a, b = pcall(fn)
-	if not ok then return false, "ERR(" .. Str(a) .. ")" end
-	return true, a, b
-end
-
-local function Num(v)
-	if type(v) ~= "number" then return Str(v) end
-	return tostring(math.floor(v * 10 + 0.5) / 10)
+-- A UI-side check line (the summarizer reads it like the gameplay ones).
+local function UICheck(id, status, text)
+	m_UISeq = m_UISeq + 1
+	local line = "[ABN][CHECK] " .. id .. "_T" .. Turn() .. "_u" .. m_UISeq .. " " .. status .. " T" .. Turn() .. " " .. Str(text)
+	print(line)
+	m_UILines[#m_UILines + 1] = string.sub(line, 1, 300)
+	while #m_UILines > UI_MAX do table.remove(m_UILines, 1) end
 end
 
 local function ReadProp(key)
@@ -92,282 +100,204 @@ local function ReadProp(key)
 	return nil
 end
 
-local function Records()
-	local v = ReadProp("ABN_SpikeCities")
-	if type(v) == "table" then return v end
-	return {}
-end
-
-local function RecByTag(tag)
-	for _, r in ipairs(Records()) do
-		if r.tag == tag then return r end
-	end
-	return nil
-end
-
-local function CityOf(tag)
-	local r = RecByTag(tag)
-	if r == nil then return nil end
-	local c = CityManager.GetCityAt(r.x, r.y)
-	if c == nil or c:GetOwner() ~= r.owner then return nil end
-	return c
-end
-
-local function CityLabel(c)
-	if c == nil then return "nil" end
-	return Str(c:GetOwner()) .. "/" .. Str(c:GetID()) .. "@" .. Str(c:GetX()) .. "," .. Str(c:GetY())
-end
-
 local function Capital(pid)
 	local ok, c = pcall(function() return Players[pid]:GetCities():GetCapitalCity() end)
 	if ok then return c end
 	return nil
 end
 
--- ---------------------------------------------------------------------------
--- Requests (flat params; EFV_Dev_Panel.lua:241-262)
--- ---------------------------------------------------------------------------
-local function Send(cmd)
-	m_StampN = m_StampN + 1
-	local p = { OnStart = "ABN_Dev", cmd = cmd, stamp = m_StampN }
-	local ok, err = pcall(function()
-		UI.RequestPlayerOperation(LocalID(), PlayerOperations.EXECUTE_SCRIPT, p)
-	end)
-	UILog("DEV", "request cmd=" .. cmd .. " stamp=" .. m_StampN .. " ok=" .. tostring(ok) .. (ok and "" or (" err=" .. Str(err))))
-end
-
--- ---------------------------------------------------------------------------
--- UI halves of the spikes
--- ---------------------------------------------------------------------------
-
--- P: the same probes from the UI (CitySupport.lua:421, WorldRankings.lua:1844, RazeCity.lua:83).
-local function ProbeUI(label, c)
-	if c == nil then
-		UILog("P", label .. " no city")
-		return
-	end
-	local okC, a = M(c, "IsCapital", function() return c:IsCapital() end)
-	local okO, b = M(c, "IsOriginalCapital", function() return c:IsOriginalCapital() end)
-	local okW, o = M(c, "GetOriginalOwner", function() return c:GetOriginalOwner() end)
-	UILog("P", label .. " " .. CityLabel(c) .. " UI IsCapital=" .. Str(a) .. " IsOriginalCapital=" .. Str(b) ..
-		" GetOriginalOwner=" .. Str(o) .. " owner=" .. Str(c:GetOwner()))
-end
-
-local function NearestAICapital(me)
-	local cap = Capital(me)
-	if cap == nil then return nil end
-	local best, bestD = nil, 9999
-	local ids = {}
-	pcall(function()
-		for _, id in ipairs(PlayerManager.GetAliveIDs()) do ids[#ids + 1] = id end
-	end)
-	table.sort(ids)
-	for _, pid in ipairs(ids) do
-		local ok, isAI = pcall(function() return pid ~= me and Players[pid]:IsMajor() and not Players[pid]:IsHuman() end)
-		if ok and isAI then
-			local c = Capital(pid)
-			if c ~= nil then
-				local d = Map.GetPlotDistance(cap:GetX(), cap:GetY(), c:GetX(), c:GetY())
-				if d < bestD then best, bestD = c, d end
-			end
-		end
-	end
-	return best
-end
-
-local function ProbesUI()
-	local me = LocalID()
-	ProbeUI("own_capital", Capital(me))
-	ProbeUI("S2", CityOf("S2"))
-	ProbeUI("ai_capital", NearestAICapital(me))
-end
-
--- S3: loyalty, per-turn and every non-zero breakdown entry (CityPanelCulture.lua:88-149).
-local S3_TAGS = { "S3-C", "S3-A", "S3-B0", "S3-B1", "S3-B2" }
-local function LoyaltyUI(why)
-	for _, tag in ipairs(S3_TAGS) do
-		local c = CityOf(tag)
-		if c ~= nil then
-			local ci = nil
-			pcall(function() ci = c:GetCulturalIdentity() end)
-			local _, loy = M(ci, "GetLoyalty", function() return ci:GetLoyalty() end)
-			local _, pt = M(ci, "GetLoyaltyPerTurn", function() return ci:GetLoyaltyPerTurn() end)
-			local okB, bd = M(ci, "GetIdentitySourcesDetailedBreakdown", function() return ci:GetIdentitySourcesDetailedBreakdown() end)
-			local parts = {}
-			if okB and type(bd) == "table" then
-				for _, inner in ipairs(bd) do
-					if type(inner) == "table" then
-						local src, val = next(inner)
-						if type(val) == "number" and val ~= 0 then parts[#parts + 1] = Str(src) .. "=" .. Num(val) end
-					end
-				end
-			else
-				parts[1] = "breakdown " .. Str(bd)
-			end
-			UILog("S3", tag .. " " .. why .. " loyalty=" .. Num(loy) .. " perTurn=" .. Num(pt) .. " | " .. table.concat(parts, "; "))
-		end
-	end
-end
-
--- S4: damage and siege from the UI (CitySupport.lua:359-372, 618-620).
-local function SiegeUI(why)
-	local c = CityOf("S4")
-	if c == nil then return end
-	local d = nil
-	pcall(function() d = Players[c:GetOwner()]:GetDistricts():FindID(c:GetDistrictID()) end)
-	local _, g = M(d, "GetDamage", function() return d:GetDamage(DefenseTypes.DISTRICT_GARRISON) end)
-	local _, gm = M(d, "GetMaxDamage", function() return d:GetMaxDamage(DefenseTypes.DISTRICT_GARRISON) end)
-	local _, o = M(d, "GetDamage", function() return d:GetDamage(DefenseTypes.DISTRICT_OUTER) end)
-	local _, s = M(d, "IsUnderSiege", function() return d:IsUnderSiege() end)
-	UILog("S4", why .. " " .. CityLabel(c) .. " garrison=" .. Str(g) .. "/" .. Str(gm) .. " outer=" .. Str(o) .. " UI IsUnderSiege=" .. Str(s))
-end
-
--- S1 U: the owner's own RAZE command (RazeCity.lua:46-56; Raze_City_Reminder_Popup.lua:29-37).
-local DIRECTIVES = { "LIBERATE_FOUNDER", "LIBERATE_PREVIOUS_OWNER", "KEEP", "RAZE" }
-
-local function DirectiveValue(name)
-	local ok, v = pcall(function() return CityDestroyDirectives[name] end)
-	if ok then return v end
+-- The city open in the city panel, when it is the local player's.
+local function SelectedCity()
+	local ok, c = pcall(function() return UI.GetHeadSelectedCity() end)
+	if ok and c ~= nil and c:GetOwner() == LocalID() then return c end
 	return nil
 end
 
-local function CanDestroy(c, flags)
-	local ok, v = pcall(function()
-		local t = {}
-		t[UnitOperationTypes.PARAM_FLAGS] = flags
-		return CityManager.CanStartCommand(c, CityCommandTypes.DESTROY, t)
-	end)
-	if ok then return v end
-	return "ERR(" .. Str(v) .. ")"
+-- The focus city set by the gameplay side (registry tag in ABN_DevState.focus).
+local function FocusCity()
+	local me = LocalID()
+	local st = ReadProp(KEY_STATE)
+	local tag = type(st) == "table" and st.focus or nil
+	if type(tag) == "string" and tag ~= "CAP" then
+		local reg = ReadProp(KEY_CITIES)
+		if type(reg) == "table" then
+			for _, r in ipairs(reg) do
+				if r.tag == tag then
+					local c = CityManager.GetCityAt(r.x, r.y)
+					if c ~= nil and c:GetOwner() == r.owner and c:GetID() == r.id then return c, tag end
+				end
+			end
+		end
+	end
+	return Capital(me), "CAP"
 end
 
-local function RequestRaze(c)
+-- Same order as the gameplay side: open city, focus city, capital.
+local function TargetCity()
+	local c = SelectedCity()
+	if c ~= nil then return c end
+	return (FocusCity())
+end
+
+-- ---------------------------------------------------------------------------
+-- Requests (flat params; EFV_Dev_Panel.lua:241-262)
+-- ---------------------------------------------------------------------------
+local function SendRaw(p)
 	local ok, err = pcall(function()
-		local t = {}
-		t[UnitOperationTypes.PARAM_FLAGS] = CityDestroyDirectives.RAZE
-		UI.DeselectAllCities()
-		CityManager.RequestCommand(c, CityCommandTypes.DESTROY, t)
+		UI.RequestPlayerOperation(LocalID(), PlayerOperations.EXECUTE_SCRIPT, p)
 	end)
 	return ok, err
 end
 
-local function S1RunUI()
-	local vals = {}
-	for _, n in ipairs(DIRECTIVES) do vals[#vals + 1] = n .. "=" .. Str(DirectiveValue(n)) end
-	UILog("S1", "CityDestroyDirectives " .. table.concat(vals, " "))
-	local U = CityOf("S3-B2")
-	if U == nil then
-		UILog("S1", "U city S3-B2 missing")
-	else
-		local can = {}
-		for _, n in ipairs(DIRECTIVES) do can[#can + 1] = n .. "=" .. Str(CanDestroy(U, DirectiveValue(n))) end
-		UILog("S1", "U " .. CityLabel(U) .. " CanStartCommand(DESTROY): " .. table.concat(can, " "))
+-- A dev command. Returns its stamp.
+local function Send(cmd, args)
+	m_StampN = m_StampN + 1
+	local p = { OnStart = "ABN_Dev", cmd = cmd, stamp = m_StampN }
+	local sel = SelectedCity()
+	if sel ~= nil then
+		p.cityID = sel:GetID()
+		p.x = sel:GetX()
+		p.y = sel:GetY()
 	end
-	UILog("S1", "RAZE on capital=" .. Str(CanDestroy(Capital(LocalID()), DirectiveValue("RAZE"))) ..
-		" on control S3-C=" .. Str(CanDestroy(CityOf("S3-C"), DirectiveValue("RAZE"))))
-	if U ~= nil and CanDestroy(U, DirectiveValue("RAZE")) == true then
-		local ok, err = RequestRaze(U)
-		UILog("S1", "U RequestCommand(DESTROY, RAZE) on S3-B2 ok=" .. tostring(ok) .. " err=" .. Str(err))
-	else
-		UILog("S1", "U RAZE not allowed on S3-B2: no command sent")
+	if args ~= nil then
+		for _, k in ipairs({ "pop", "dist", "kind", "amount", "on" }) do
+			if args[k] ~= nil then p[k] = args[k] end
+		end
 	end
-	Send("s1_run")
+	local ok, err = SendRaw(p)
+	UILog("DEV", "request cmd=" .. cmd .. " stamp=" .. m_StampN .. " ok=" .. tostring(ok) .. (ok and "" or (" err=" .. Str(err))))
+	return m_StampN
 end
 
--- S1 HS guard: fire the stored raze only while the local player is the owner.
-local function HotseatGuard(pid)
-	local st = ReadProp("ABN_SpikeState")
-	if type(st) ~= "table" or st.hsOwner == nil then return end
-	local okH, human = pcall(function() return Players[pid]:IsHuman() end)
-	if not (okH and human) then return end
-	local me = LocalID()
-	UILog("S1", "HS PlayerTurnActivated pid=" .. Str(pid) .. " local=" .. Str(me) .. " owner=" .. Str(st.hsOwner) .. " seq=" .. Str(st.hsSeq))
-	if me ~= st.hsOwner then
-		UILog("S1", "HS skip: local player is not the owner")
+-- The real mod request (PLAN 4): ABN_Start / ABN_Cancel with cityID, x, y of the target.
+local function SendABN(name)
+	local c = TargetCity()
+	if c == nil then
+		UILog("DEV", name .. ": no target city")
+		return false
+	end
+	local ok, err = SendRaw({ OnStart = name, cityID = c:GetID(), x = c:GetX(), y = c:GetY() })
+	UILog("DEV", "request " .. name .. " city=" .. c:GetID() .. "@" .. c:GetX() .. "," .. c:GetY() .. " ok=" .. tostring(ok) .. (ok and "" or (" err=" .. Str(err))))
+	return ok
+end
+
+-- ---------------------------------------------------------------------------
+-- Sequence runner: one step per call, waiting for the gameplay answer
+-- ---------------------------------------------------------------------------
+local function AckStamp()
+	return tonumber(ReadProp(KEY_STAMP)) or 0
+end
+
+local function RunStep(step)
+	if step.gp ~= nil then
+		m_WaitStamp = Send(step.gp, step.args)
+		m_WaitTicks = 0
+	elseif step.abn ~= nil then
+		SendABN(step.abn)
+		m_Hold = HOLD_TICKS
+	end
+end
+
+local function Pump(fromTick)
+	if m_Hold > 0 then
+		if fromTick then m_Hold = m_Hold - 1 end
 		return
 	end
-	if m_HSDoneSeq == st.hsSeq then return end
-	local c = CityManager.GetCityAt(st.hsX, st.hsY)
-	if c == nil or c:GetOwner() ~= me then
-		UILog("S1", "HS city gone or not ours")
+	if m_WaitStamp ~= nil then
+		if AckStamp() >= m_WaitStamp then
+			m_WaitStamp = nil
+		else
+			if fromTick then
+				m_WaitTicks = m_WaitTicks + 1
+				if m_WaitTicks > ACK_TIMEOUT_TICKS then
+					UILog("DEV", "no gameplay answer for stamp " .. m_WaitStamp .. ": continuing")
+					m_WaitStamp = nil
+				end
+			end
+			return
+		end
+	end
+	if #m_Queue == 0 then return end
+	local step = table.remove(m_Queue, 1)
+	RunStep(step)
+end
+
+-- ---------------------------------------------------------------------------
+-- UI halves
+-- ---------------------------------------------------------------------------
+
+-- Probe blockers: the same city, ABN_Rules.FirstBlocker run in the UI context against
+-- the gameplay answer. SIEGE (UI only) stands for DAMAGED or ENEMY_NEAR in gameplay.
+local function ProbeCompareUI()
+	local pr = ReadProp(KEY_PROBE)
+	if type(pr) ~= "table" then
+		UILog("DEV", "no gameplay probe result yet")
 		return
 	end
-	m_HSDoneSeq = st.hsSeq
-	local can = CanDestroy(c, DirectiveValue("RAZE"))
-	if can == true then
-		local ok, err = RequestRaze(c)
-		UILog("S1", "HS RequestCommand(DESTROY, RAZE) local=" .. Str(me) .. " ok=" .. tostring(ok) .. " err=" .. Str(err))
+	local c = CityManager.GetCityAt(pr.x, pr.y)
+	if c == nil then
+		UILog("DEV", "probe city is gone")
+		return
+	end
+	local ok, ui = pcall(ABN_Rules.FirstBlocker, c, LocalID(), tonumber(Turn()) or 0)
+	local uiS = ui or "NONE"
+	local gS = pr.got or "NONE"
+	local detail = "city " .. c:GetID() .. "@" .. c:GetX() .. "," .. c:GetY() .. " UI=" .. Str(uiS) .. " gameplay=" .. Str(gS)
+	if not ok then
+		UICheck("UIBLOCK", "FAIL", "ABN_Rules.FirstBlocker raised in the UI: " .. Str(ui))
+	elseif uiS == gS then
+		UICheck("UIBLOCK", "PASS", detail)
+	elseif uiS == "SIEGE" and (gS == "DAMAGED" or gS == "ENEMY_NEAR") then
+		UICheck("UIBLOCK", "PASS", detail .. " (siege is UI-only, DECISIONS #24)")
 	else
-		UILog("S1", "HS RAZE not allowed: CanStartCommand=" .. Str(can))
+		UICheck("UIBLOCK", "FAIL", detail)
 	end
-end
-
--- S6: test button reparented into the city panel (EFV_UnitActions.lua:94-110 pattern).
-local function S6Attach()
-	local target, where = nil, nil
-	pcall(function() target = ContextPtr:LookUpControl("/InGame/CityPanel/ActionStack") end)
-	where = "/InGame/CityPanel/ActionStack"
-	if target == nil then
-		pcall(function() target = ContextPtr:LookUpControl("/InGame/CityPanel/Banner") end)
-		where = "/InGame/CityPanel/Banner (fallback)"
-	end
-	if target == nil then
-		UILog("S6", "LookUpControl nil for ActionStack and Banner: use a floating overlay (R-UI 2.3 D)")
-		return
-	end
-	local ok, err = pcall(function()
-		if m_S6Target == nil then Controls.ABN_DevBtnStack:ChangeParent(target) end
-		Controls.ABN_DevBtnStack:SetHide(false)
-		target:CalculateSize()
-		target:ReprocessAnchoring()
-	end)
-	if ok then
-		m_S6Target, m_S6Where = target, where
-	end
-	UILog("S6", "attach to " .. where .. " ok=" .. tostring(ok) .. " err=" .. Str(err) .. "; open a city now")
-end
-
-local function S6Click()
-	local c = nil
-	pcall(function() c = UI.GetHeadSelectedCity() end)
-	local last = ReadProp("ABN_SpikeLast")
-	local n = type(last) == "table" and #last or 0
-	UILog("S6", "button click: selected city id=" .. (c and Str(c:GetID()) or "nil") .. " owner=" .. (c and Str(c:GetOwner()) or "nil") ..
-		" ABN_SpikeLast lines=" .. n .. (n > 0 and (" last=" .. Str(last[n])) or ""))
-end
-
-local function S6Refresh(label)
-	if m_S6Target == nil then return end
-	local ok = pcall(function()
-		m_S6Target:CalculateSize()
-		m_S6Target:ReprocessAnchoring()
-	end)
-	UILog("S6", label .. " (refresh ok=" .. tostring(ok) .. ")")
 end
 
 -- ---------------------------------------------------------------------------
 -- Buttons
 -- ---------------------------------------------------------------------------
 local BUTTONS = {
-	{ header = "Part 1 (single player)" },
-	{ label = "S0 Setup", cmd = "s0_setup" },
-	{ label = "P Probes", cmd = "p_probes", ui = ProbesUI },
-	{ label = "S2a To 8", cmd = "s2a" },
-	{ label = "S2b Cut", cmd = "s2b" },
-	{ label = "S3 Step", cmd = "s3_step", after = function() LoyaltyUI("after_click") end },
-	{ label = "S4 Run", cmd = "s4_run", after = function() SiegeUI("after_run") end },
-	{ label = "S4 Read", cmd = "s4_read", after = function() SiegeUI("read") end },
-	{ label = "S6 Attach", ui = S6Attach },
-	{ label = "S5 Self", cmd = "s5_self" },
-	{ header = "Part 1, last (risky: city removal)" },
-	{ label = "S1 Run", ui = S1RunUI },
-	{ label = "S1 Check", cmd = "s1_check" },
-	{ label = "S1 Arm T", cmd = "s1_arm_t" },
-	{ label = "S1 One", cmd = "s1_one" },
-	{ header = "Part 2 (hotseat)" },
-	{ label = "S5 HS Setup", cmd = "s5_hs_setup" },
-	{ label = "S5 HS Send", cmd = "s5_hs_send" },
-	{ label = "S1 HS Arm", cmd = "s1_hs_arm" },
+	{ header = "Test cities (found your capital first; a new city becomes the focus)" },
+	{ label = "City pop 1", cmd = "make_city", args = { pop = 1 } },
+	{ label = "City pop 4", cmd = "make_city", args = { pop = 4 } },
+	{ label = "City pop 5", cmd = "make_city", args = { pop = 5 } },
+	{ label = "City pop 8", cmd = "make_city", args = { pop = 8 } },
+	{ label = "City pop 9", cmd = "make_city", args = { pop = 9 } },
+	{ label = "City pop 10", cmd = "make_city", args = { pop = 10 } },
+	{ label = "City pop 15", cmd = "make_city", args = { pop = 15 } },
+	{ label = "City pop 20", cmd = "make_city", args = { pop = 20 } },
+	{ label = "Nbrs at 7 + 10", cmd = "nbrs_7_10" },
+	{ label = "Nbrs at R, R+1", cmd = "nbrs_r" },
+	{ label = "Overlap set", cmd = "overlap" },
+	{ label = "Focus next", cmd = "focus_next" },
+	{ label = "Focus open city", cmd = "focus_sel" },
+	{ header = "Diplomacy and enemies (they act on the open city, else the focus)" },
+	{ label = "Meet all majors", cmd = "meet_all" },
+	{ label = "Meet next human", cmd = "meet_human" },
+	{ label = "War nearest AI", cmd = "war_ai" },
+	{ label = "Besiege city", cmd = "besiege" },
+	{ label = "Enemy 6 (AI war)", cmd = "enemy", args = { dist = 6, kind = "ai" } },
+	{ label = "Enemy 7 (AI war)", cmd = "enemy", args = { dist = 7, kind = "ai" } },
+	{ label = "Enemy 6 (barb 63)", cmd = "enemy", args = { dist = 6, kind = "barb" } },
+	{ label = "Enemy 7 (barb 63)", cmd = "enemy", args = { dist = 7, kind = "barb" } },
+	{ label = "Enemy 6 (free 62)", cmd = "enemy", args = { dist = 6, kind = "free" } },
+	{ label = "Enemy 7 (free 62)", cmd = "enemy", args = { dist = 7, kind = "free" } },
+	{ header = "Damage, the last-city and original-capital cases (these destroy cities)" },
+	{ label = "Damage garrison", cmd = "damage", args = { kind = "g", amount = 30 } },
+	{ label = "Damage walls", cmd = "damage", args = { kind = "o", amount = 30 } },
+	{ label = "Heal city", cmd = "heal" },
+	{ label = "LAST CITY (kills rest)", cmd = "last_city" },
+	{ label = "ORIG CAPITAL (razes cap)", cmd = "orig_capital" },
+	{ header = "Abandonment (sends the real ABN_Start / ABN_Cancel)" },
+	{ label = "START (checked)", steps = { { gp = "arm_start" }, { abn = "ABN_Start" }, { gp = "check" } } },
+	{ label = "CANCEL (checked)", steps = { { gp = "arm_cancel" }, { abn = "ABN_Cancel" }, { gp = "check" } } },
+	{ label = "Plan (timeline)", cmd = "plan" },
+	{ label = "Probe blockers", cmd = "probe", after = ProbeCompareUI },
+	{ label = "Check now", cmd = "check" },
+	{ label = "Dump state", cmd = "dump" },
+	{ label = "Turn checker on/off", cmd = "checker" },
+	{ label = "Reset dev ledger", cmd = "reset" },
 }
 
 local RefreshResults
@@ -377,8 +307,18 @@ local function OnButton(def)
 		local ok, err = pcall(def.ui)
 		if not ok then UILog("DEV", def.label .. " UI ERROR " .. Str(err)) end
 	end
-	if def.cmd ~= nil then Send(def.cmd) end
-	if def.after ~= nil then m_Pending[#m_Pending + 1] = def end
+	if def.steps ~= nil then
+		m_Queue = {}
+		for _, s in ipairs(def.steps) do m_Queue[#m_Queue + 1] = s end
+		m_Hold = 0
+		m_WaitStamp = nil
+		Pump(false)
+	elseif def.cmd ~= nil then
+		local stamp = Send(def.cmd, def.args)
+		if def.after ~= nil then
+			m_Pending[#m_Pending + 1] = { stamp = stamp, fn = def.after, label = def.label }
+		end
+	end
 	RefreshResults()
 end
 
@@ -401,26 +341,33 @@ end
 -- ---------------------------------------------------------------------------
 -- Result display
 -- ---------------------------------------------------------------------------
-local function CitiesText()
-	local parts = {}
-	for _, r in ipairs(Records()) do
-		local c = CityManager.GetCityAt(r.x, r.y)
-		local name = "gone"
-		if c ~= nil then
-			local ok, n = pcall(function() return Locale.Lookup(c:GetName()) end)
-			name = ok and Str(n) or "?"
-		end
-		parts[#parts + 1] = Str(r.tag) .. "=" .. name .. " (" .. Str(r.x) .. "," .. Str(r.y) .. ")"
+local function InfoText()
+	local st = ReadProp(KEY_STATE)
+	local ty = ReadProp(KEY_TALLY)
+	local checker = "ON"
+	if type(st) == "table" and st.checker == 0 then checker = "OFF" end
+	local pass, fail, last = 0, 0, "-"
+	if type(ty) == "table" then
+		pass = tonumber(ty.pass) or 0
+		fail = tonumber(ty.fail) or 0
+		if type(ty.lastFail) == "string" and fail > 0 then last = ty.lastFail end
 	end
-	if #parts == 0 then return "Test cities: none yet (found your capital, then S0 Setup)" end
-	return "Test cities: " .. table.concat(parts, ", ")
+	local focus, tag = FocusCity()
+	local sel = SelectedCity()
+	local focusText = "none"
+	if focus ~= nil then focusText = tag .. " pop " .. Str(focus:GetPopulation()) end
+	local target = ""
+	if sel ~= nil then target = " | open city pop " .. Str(sel:GetPopulation()) .. " is the target" end
+	local verdict = fail > 0 and ("  <<< " .. fail .. " FAIL, last " .. last) or ""
+	return "Local P" .. Str(LocalID()) .. " | turn " .. Turn() .. " | focus " .. focusText .. target ..
+		" | checker " .. checker .. " | checks PASS " .. pass .. " FAIL " .. fail .. verdict
 end
 
--- Log line -> label text: drop the [ABN][SPIKE] tag, keep CHECK, and turn the
+-- Log line -> label text: drop the [ABN][DEV] tag, keep CHECK, and turn the
 -- remaining brackets into parentheses (labels treat [X] as markup).
 local function Display(s)
 	s = Str(s)
-	s = string.gsub(s, "^%[ABN%]%[SPIKE%]%s*", "")
+	s = string.gsub(s, "^%[ABN%]%[DEV%]%s*", "")
 	s = string.gsub(s, "^%[ABN%]%[CHECK%]%s*", "CHECK ")
 	s = string.gsub(s, "%[", "(")
 	s = string.gsub(s, "%]", ")")
@@ -428,15 +375,15 @@ local function Display(s)
 end
 
 RefreshResults = function()
-	local last = ReadProp("ABN_SpikeLast")
+	local last = ReadProp(KEY_LAST)
 	local g = {}
 	if type(last) == "table" then
 		for _, s in ipairs(last) do g[#g + 1] = Display(s) end
 	end
 	local u = {}
 	for _, s in ipairs(m_UILines) do u[#u + 1] = Display(s) end
-	Controls.InfoLabel:SetText("Local P" .. Str(LocalID()) .. " | turn " .. Turn() .. " | " .. CitiesText())
-	Controls.ResultLabel:SetText("Gameplay (ABN_SpikeLast):[NEWLINE]" .. (#g > 0 and table.concat(g, "[NEWLINE]") or "-"))
+	Controls.InfoLabel:SetText(InfoText())
+	Controls.ResultLabel:SetText("Gameplay (non-PASS lines and info, newest last):[NEWLINE]" .. (#g > 0 and table.concat(g, "[NEWLINE]") or "-"))
 	Controls.UILabel:SetText("UI:[NEWLINE]" .. (#u > 0 and table.concat(u, "[NEWLINE]") or "-"))
 	pcall(function()
 		Controls.ResultStack:CalculateSize()
@@ -445,26 +392,36 @@ RefreshResults = function()
 end
 
 local function Signature()
-	local last = ReadProp("ABN_SpikeLast")
-	if type(last) ~= "table" then return "none" end
-	return #last .. "|" .. Str(last[#last])
+	local last = ReadProp(KEY_LAST)
+	local n = type(last) == "table" and #last or 0
+	local ty = ReadProp(KEY_TALLY)
+	local t = type(ty) == "table" and (Str(ty.pass) .. "/" .. Str(ty.fail)) or "-"
+	return n .. "|" .. (n > 0 and Str(last[n]) or "") .. "|" .. t .. "|" .. Str(ReadProp(KEY_STAMP))
 end
 
--- Update tick: re-read ABN_SpikeLast; when it changed, run the pending UI halves.
+-- Update tick: run the UI halves whose gameplay answer arrived, pump the sequence,
+-- refresh the display when the gameplay lines changed.
 local function OnUpdate(dt)
 	m_Clock = m_Clock + (tonumber(dt) or 0)
 	if m_Clock < m_NextPoll then return end
 	m_NextPoll = m_Clock + POLL_SECONDS
-	local sig = Signature()
-	if sig == m_LastSig then return end
-	m_LastSig = sig
+	local ack = AckStamp()
 	local pend = m_Pending
 	m_Pending = {}
-	for _, def in ipairs(pend) do
-		local ok, err = pcall(def.after)
-		if not ok then UILog("DEV", def.label .. " UI ERROR " .. Str(err)) end
+	for _, p in ipairs(pend) do
+		if p.stamp <= ack then
+			local ok, err = pcall(p.fn)
+			if not ok then UILog("DEV", p.label .. " UI ERROR " .. Str(err)) end
+		else
+			m_Pending[#m_Pending + 1] = p
+		end
 	end
-	if m_Open then RefreshResults() end
+	Pump(true)
+	local sig = Signature()
+	if sig ~= m_LastSig then
+		m_LastSig = sig
+		if m_Open then RefreshResults() end
+	end
 end
 
 -- ---------------------------------------------------------------------------
@@ -511,31 +468,16 @@ local function AttachLaunchButton()
 		backingTile:SetSizeX(buttonStack:GetSizeX() - 20)
 		LuaEvents.LaunchBar_Resize(buttonStack:GetSizeX())
 	end)
-	print(PREFIX .. " DEV UI launch bar button ok=" .. tostring(ok) .. (ok and "" or (" err=" .. Str(err))) .. " (Ctrl+Shift+D works regardless)")
+	print(PREFIX .. " UI launch bar button ok=" .. tostring(ok) .. (ok and "" or (" err=" .. Str(err))) .. " (Ctrl+Shift+D works regardless)")
 end
 
--- Always-on UI logger at the local player's turn start (SPIKES 0).
 local function OnPlayerTurnActivated(pid, isFirstTime)
-	HotseatGuard(pid)
 	if pid ~= LocalID() then return end
-	local st = ReadProp("ABN_SpikeState")
-	if type(st) == "table" and (st.s3Phase or 0) >= 1 then LoyaltyUI("turn_start") end
-	if type(st) == "table" and st.s4Watch == 1 then SiegeUI("turn_start") end
 	if m_Open then RefreshResults() end
 end
 
-local function OnCityRemoved(pid, cityID)
-	UILog("S1", "Events.CityRemovedFromMap (UI) pid=" .. Str(pid) .. " cityID=" .. Str(cityID))
-end
-
 local function OnCitySelectionChanged(owner, cityID, i, j, k, isSelected, isEditable)
-	if m_S6Target ~= nil then
-		S6Refresh("CitySelectionChanged owner=" .. Str(owner) .. " city=" .. Str(cityID) .. " selected=" .. Str(isSelected))
-	end
-end
-
-local function OnLiveCityData(kData, isShowing)
-	if m_S6Target ~= nil then S6Refresh("CityPanel_LiveCityDataChanged showing=" .. Str(isShowing)) end
+	if m_Open then RefreshResults() end
 end
 
 local function Subscribe(label, getter, fn)
@@ -544,10 +486,10 @@ local function Subscribe(label, getter, fn)
 		if ev == nil then error("event is nil") end
 		ev.Add(function(...)
 			local okH, errH = pcall(fn, ...)
-			if not okH then print(PREFIX .. " DEV UI " .. label .. " listener error: " .. Str(errH)) end
+			if not okH then print(PREFIX .. " UI " .. label .. " listener error: " .. Str(errH)) end
 		end)
 	end)
-	if not ok then print(PREFIX .. " DEV UI subscribe FAILED " .. label .. ": " .. Str(err)) end
+	if not ok then print(PREFIX .. " UI subscribe FAILED " .. label .. ": " .. Str(err)) end
 end
 
 -- ---------------------------------------------------------------------------
@@ -556,20 +498,17 @@ end
 local function Initialize()
 	ContextPtr:SetHide(false)       -- contexts load hidden
 	Controls.Main:SetHide(true)
-	Controls.ABN_DevBtnStack:SetHide(true)
 	ContextPtr:SetInputHandler(OnInput, true)
 	Controls.CloseButton:RegisterCallback(Mouse.eLClick, function() SetOpen(false) end)
 	Controls.RefreshButton:RegisterCallback(Mouse.eLClick, RefreshResults)
-	Controls.ABN_DevS6Button:RegisterCallback(Mouse.eLClick, S6Click)
-	Controls.TitleLabel:SetText("Abandon Cities spike tools " .. DEV_VERSION .. "  (Ctrl+Shift+D)")
+	Controls.TitleLabel:SetText("Abandon Cities dev tools " .. DEV_VERSION .. "  (Ctrl+Shift+D)")
+	m_StampN = AckStamp()           -- never behind the gameplay side's last answer (loaded games)
 	ContextPtr:SetUpdate(OnUpdate)
 	BuildButtons()
 	Subscribe("Events.LoadGameViewStateDone", function() return Events.LoadGameViewStateDone end, AttachLaunchButton)
 	Subscribe("Events.PlayerTurnActivated", function() return Events.PlayerTurnActivated end, OnPlayerTurnActivated)
-	Subscribe("Events.CityRemovedFromMap", function() return Events.CityRemovedFromMap end, OnCityRemoved)
 	Subscribe("Events.CitySelectionChanged", function() return Events.CitySelectionChanged end, OnCitySelectionChanged)
-	Subscribe("LuaEvents.CityPanel_LiveCityDataChanged", function() return LuaEvents.CityPanel_LiveCityDataChanged end, OnLiveCityData)
-	print(PREFIX .. " DEV UI ready (Ctrl+Shift+D) " .. DEV_VERSION)
+	print(PREFIX .. " UI ready (Ctrl+Shift+D) " .. DEV_VERSION)
 end
 
 Initialize()

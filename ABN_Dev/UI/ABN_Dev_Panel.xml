@@ -1,52 +1,44 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- ABN_Dev_Panel: spike panel for the Abandon Cities spike session (UI context, AddUserInterfaces InGame).
+<!-- ABN_Dev_Panel: dev tools panel for Abandon Cities (UI context, AddUserInterfaces InGame).
      Toggle: Ctrl+Shift+D or the "DEV" launch bar button. InGame.lua loads this context HIDDEN;
      the Lua un-hides ContextPtr in Initialize and toggles only the Main container.
-     Layout copied from EFV_Dev_Panel.xml. ABN_DevBtnStack (S6) sits outside Main: S6 Attach
-     re-parents it into /InGame/CityPanel/ActionStack (CityPanel.xml:161). -->
+     Layout copied from EFV_Dev_Panel.xml (spike build 0.0.0.1 of this mod). -->
 <Context Name="ABN_Dev_Panel">
 
-	<Container ID="Main" Anchor="L,T" Offset="12,64" Size="660,760" Hidden="1" ConsumeMouse="1">
+	<Container ID="Main" Anchor="L,T" Offset="12,64" Size="744,840" Hidden="1" ConsumeMouse="1">
 		<Box Anchor="L,T" Size="parent,parent" Color="12,16,24,235"/>
 		<Box Anchor="L,T" Size="parent,2" Color="200,170,110,255"/>
 		<Box Anchor="L,B" Size="parent,2" Color="200,170,110,255"/>
 		<Stack ID="MainStack" Anchor="L,T" Offset="10,8" StackGrowth="Bottom" StackPadding="4">
-			<Container Size="640,28">
-				<Label ID="TitleLabel" Anchor="L,C" Style="FontNormal18" Color="240,220,170,255" String="Abandon Cities spike tools"/>
+			<Container Size="724,28">
+				<Label ID="TitleLabel" Anchor="L,C" Style="FontNormal18" Color="240,220,170,255" String="Abandon Cities dev tools"/>
 				<GridButton ID="RefreshButton" Anchor="R,C" Offset="76,0" Size="70,26" SliceCorner="12,12" SliceSize="1,1" SliceTextureSize="24,24" Texture="Controls_ButtonControl_Brown" StateOffsetIncrement="0,24" Style="FontNormal14" TextColor="230,220,200,255" String="Refresh"/>
 				<GridButton ID="CloseButton" Anchor="R,C" Size="70,26" SliceCorner="12,12" SliceSize="1,1" SliceTextureSize="24,24" Texture="Controls_ButtonControl_Brown" StateOffsetIncrement="0,24" Style="FontNormal14" TextColor="230,220,200,255" String="Close"/>
 			</Container>
-			<Label ID="InfoLabel" Anchor="L,T" Style="FontNormal12" Color="210,210,210,255" WrapWidth="640" String="-"/>
-			<Stack ID="ButtonStack" Anchor="L,T" StackGrowth="Right" WrapWidth="640" StackPadding="4"/>
-			<ScrollPanel ID="ResultScroll" Anchor="L,T" Size="640,470" Vertical="1" AutoScrollBar="1">
+			<Label ID="InfoLabel" Anchor="L,T" Style="FontNormal12" Color="210,210,210,255" WrapWidth="724" String="-"/>
+			<Stack ID="ButtonStack" Anchor="L,T" StackGrowth="Right" WrapWidth="724" StackPadding="4"/>
+			<ScrollPanel ID="ResultScroll" Anchor="L,T" Size="724,380" Vertical="1" AutoScrollBar="1">
 				<Stack ID="ResultStack" Anchor="L,T" StackGrowth="Bottom" StackPadding="6">
-					<Label ID="ResultLabel" Anchor="L,T" Style="FontNormal12" Color="240,220,170,255" WrapWidth="620" String="-"/>
-					<Label ID="UILabel" Anchor="L,T" Style="FontNormal12" Color="190,220,240,255" WrapWidth="620" String="-"/>
+					<Label ID="ResultLabel" Anchor="L,T" Style="FontNormal12" Color="240,220,170,255" WrapWidth="704" String="-"/>
+					<Label ID="UILabel" Anchor="L,T" Style="FontNormal12" Color="190,220,240,255" WrapWidth="704" String="-"/>
 				</Stack>
 				<ScrollBar Style="ScrollVerticalBarAlt" Anchor="R,C" AnchorSide="O,I"/>
 			</ScrollPanel>
 		</Stack>
 	</Container>
 
-	<!-- S6 test button: 44x53, UnitPanel_ActionButton texture (CityPanel.xml:162-166 size). -->
-	<Stack ID="ABN_DevBtnStack" Anchor="L,T" StackGrowth="Right" Padding="3" Hidden="1" ConsumeMouse="1">
-		<Button ID="ABN_DevS6Button" Anchor="L,T" Size="44,53" Texture="UnitPanel_ActionButton" ToolTip="Abandon Cities spike S6: test button. Click it, change production, use prev/next city, close the panel.">
-			<Label Anchor="C,C" Offset="0,-2" Style="FontNormal14" Color="240,220,170,255" String="S6"/>
-		</Button>
-	</Stack>
-
 	<Instance Name="DevButtonInstance">
-		<GridButton ID="Button" Size="120,26" SliceCorner="12,12" SliceSize="1,1" SliceTextureSize="24,24" Texture="Controls_ButtonControl_Brown" StateOffsetIncrement="0,24" Style="FontNormal12" TextColor="230,220,200,255" String=""/>
+		<GridButton ID="Button" Size="140,26" SliceCorner="12,12" SliceSize="1,1" SliceTextureSize="24,24" Texture="Controls_ButtonControl_Brown" StateOffsetIncrement="0,24" Style="FontNormal12" TextColor="230,220,200,255" String=""/>
 	</Instance>
 
 	<Instance Name="DevHeaderInstance">
-		<Container ID="Header" Size="640,22">
+		<Container ID="Header" Size="724,22">
 			<Label ID="HeaderLabel" Anchor="L,B" Style="FontNormal14" Color="240,220,170,255" String=""/>
 		</Container>
 	</Instance>
 
 	<Instance Name="DevLaunchBarItem">
-		<Button ID="LaunchItemButton" Anchor="L,C" Size="49,49" Texture="LaunchBar_Hook_GreatPeopleButton" Style="ButtonNormalText" TextureOffset="0,-1" StateOffsetIncrement="0,49" ToolTip="Abandon Cities spike panel (Ctrl+Shift+D)">
+		<Button ID="LaunchItemButton" Anchor="L,C" Size="49,49" Texture="LaunchBar_Hook_GreatPeopleButton" Style="ButtonNormalText" TextureOffset="0,-1" StateOffsetIncrement="0,49" ToolTip="Abandon Cities dev panel (Ctrl+Shift+D)">
 			<Label Anchor="C,C" Offset="0,1" Style="FontNormal14" Color="240,220,170,255" String="DEV"/>
 		</Button>
 	</Instance>
