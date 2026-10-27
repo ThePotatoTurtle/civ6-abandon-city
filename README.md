@@ -2,7 +2,7 @@
 
 A Civilization VI mod for Gathering Storm. It lets you abandon one of your own cities over a few turns. The city shrinks, then it's removed from the map, and your nearby cities lose loyalty for a while.
 
-Get it on the Steam Workshop: https://steamcommunity.com/sharedfiles/filedetails/?id=WORKSHOP_ID_TO_FILL_IN
+Get it on the Steam Workshop: https://steamcommunity.com/sharedfiles/filedetails/?id=3828536309
 
 Version 1.0.0.
 

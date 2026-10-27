@@ -1,0 +1,5 @@
+- New: abandon one of your own cities from a button on the city panel; it shrinks over 3 to 5 turns, then it's removed.
+- New: nearby cities you own lose 4 to 10 loyalty per turn while it shrinks and for a few turns after; bigger cities hit harder and wider.
+- New: cancel any time; it also cancels by itself if enemies come near, the city is damaged, or it becomes your last city.
+- New: your capital, your last city and original capitals can't be abandoned.
+- New: notifications for you each turn, and for civs that have met you.
