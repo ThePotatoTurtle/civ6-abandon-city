@@ -1,5 +1,5 @@
 -- ===========================================================================
--- ABN_Dev_Gameplay.lua  (ABN_Dev 0.1.0.0, WP9; PLAN 12)
+-- ABN_Dev_Gameplay.lua  (ABN_Dev 1.0.0.0, WP9; PLAN 12)
 -- Context:  gameplay (AddGameplayScripts). TESTING ONLY. Needs the ABN mod
 --           (modinfo dependency, LoadOrder 14000, so every handler of ABN
 --           runs before the ones below).

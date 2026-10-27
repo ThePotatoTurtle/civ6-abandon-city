@@ -1,5 +1,5 @@
 -- ===========================================================================
--- ABN_Dev_Scenario.lua  (ABN_Dev 0.1.0.0, WP9)
+-- ABN_Dev_Scenario.lua  (ABN_Dev 1.0.0.0, WP9)
 -- Module:   ABN_Dev_Scenario (global table), gameplay. TESTING ONLY.
 -- Content:  the scenario commands behind the panel buttons: test cities of a
 --           chosen size, neighbours at exact distances, enemies at exact

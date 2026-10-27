@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Mod id="3e330bb9-9538-494e-8e13-44d6cc1c6a5c" version="1">
   <Properties>
-    <Name>Abandon Cities Dev Tools (testing only) v0.1.0.0</Name>
+    <Name>Abandon Cities Dev Tools (testing only) v1.0.0.0</Name>
     <Teaser>Test panel for Abandon Cities. Not for normal play.</Teaser>
     <Description>Developer panel for testing Abandon Cities. One-click scenarios (test cities of chosen sizes, neighbours at exact distances, enemies at 6 and 7 tiles, damage, siege, war, the last-city case), a checked Start and Cancel that send the real requests, and a turn checker that writes PASS or FAIL lines to Lua.log for the population schedule, the removal turn, the debuff windows, the loyalty flags, the cooldown and the auto-cancel. Open it with Ctrl+Shift+D or the DEV button on the launch bar. Requires the Abandon Cities mod. Start a new game with it. Never enable it in a real game.</Description>
     <Authors>ThePotatoTurtle</Authors>

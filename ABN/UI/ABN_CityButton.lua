@@ -22,11 +22,15 @@ local m_State    = { kind = "HIDE" }
 local m_PollLeft = 0
 local m_PollTick = 0
 local m_Polling  = false
+local m_Dead     = false -- set on game exit; no handler may touch controls after it
 
 -- ---------------------------------------------------------------------------
 -- Attach (retried on every refresh until the city panel exists)
 -- ---------------------------------------------------------------------------
 local function Attach()
+	if m_Dead then
+		return false
+	end
 	if m_Target ~= nil then
 		return true
 	end
@@ -76,16 +80,12 @@ local function Refresh()
 	end
 
 	Controls.ABN_Button:SetToolTipString(state.tooltip)
-	if state.kind == "CANCEL" then
-		Controls.ABN_Button:SetDisabled(false)
-		Controls.ABN_ButtonLabel:SetText(tostring(state.left)) -- turns left
-	elseif state.kind == "BLOCKED" then
-		Controls.ABN_Button:SetDisabled(true)
-		Controls.ABN_ButtonLabel:SetText("X")
-	else
-		Controls.ABN_Button:SetDisabled(false)
-		Controls.ABN_ButtonLabel:SetText("X")
-	end
+	local running = state.kind == "CANCEL"
+	Controls.ABN_Button:SetDisabled(state.kind == "BLOCKED")
+	Controls.ABN_ButtonIcon:SetHide(running)
+	Controls.ABN_ButtonIcon:SetAlpha(state.kind == "BLOCKED" and 0.4 or 1) -- UnitPanel dims disabled actions the same way
+	Controls.ABN_ButtonLabel:SetHide(not running)
+	Controls.ABN_ButtonLabel:SetText(running and tostring(state.left) or "") -- turns left
 	Controls.ABN_BtnStack:SetHide(false)
 	Relayout()
 end
@@ -169,7 +169,44 @@ end
 -- Init
 -- ---------------------------------------------------------------------------
 local function OnRefreshEvent()
+	if m_Dead then
+		return
+	end
 	Refresh()
+end
+
+-- The engine keeps firing city events while it tears the game UI down, and the
+-- button lives inside CityPanel's control tree. Unhook everything first, as
+-- CityPanel's own OnShutdown does, so no handler touches a destroyed control.
+local REFRESH_EVENTS = {
+	function() return Events.CitySelectionChanged end,
+	function() return LuaEvents.CityPanel_LiveCityDataChanged end,
+	function() return Events.PlayerTurnActivated end,
+	function() return Events.CityPopulationChanged end,
+	function() return Events.CityRemovedFromMap end,
+	function() return Events.LoadGameViewStateDone end,
+}
+
+local function Teardown(why, moveHome)
+	if m_Dead then
+		return
+	end
+	m_Dead = true
+	m_Polling = false
+	print("[ABN] CityButton teardown: " .. why)
+	pcall(function() ContextPtr:ClearUpdate() end)
+	for _, get in ipairs(REFRESH_EVENTS) do
+		pcall(function() get().Remove(OnRefreshEvent) end)
+	end
+	-- Only while the city panel is still alive (exit events fire before teardown):
+	-- give the button back to this context so it dies with its own owner.
+	if moveHome and m_Target ~= nil then
+		pcall(function()
+			Controls.ABN_BtnStack:SetHide(true)
+			Controls.ABN_BtnStack:ChangeParent(Controls.ABN_Home)
+		end)
+	end
+	m_Target = nil
 end
 
 local function Initialize()
@@ -177,12 +214,12 @@ local function Initialize()
 	ContextPtr:SetHide(false)
 	Controls.ABN_Button:RegisterCallback(Mouse.eLClick, OnButtonClick)
 
-	Events.CitySelectionChanged.Add(OnRefreshEvent)
-	LuaEvents.CityPanel_LiveCityDataChanged.Add(OnRefreshEvent)
-	Events.PlayerTurnActivated.Add(OnRefreshEvent)
-	Events.CityPopulationChanged.Add(OnRefreshEvent)
-	Events.CityRemovedFromMap.Add(OnRefreshEvent)
-	Events.LoadGameViewStateDone.Add(OnRefreshEvent)
+	for _, get in ipairs(REFRESH_EVENTS) do
+		get().Add(OnRefreshEvent)
+	end
+	Events.ExitToMainMenu.Add(function() Teardown("exit to main menu", true) end)
+	Events.UserConfirmedClose.Add(function() Teardown("exit to desktop", true) end)
+	ContextPtr:SetShutdown(function() Teardown("context shutdown", false) end)
 	Attach()
 end
 

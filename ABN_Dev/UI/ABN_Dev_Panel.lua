@@ -1,5 +1,5 @@
 -- ===========================================================================
--- ABN_Dev_Panel.lua  (ABN_Dev 0.1.0.0, WP9; PLAN 12)
+-- ABN_Dev_Panel.lua  (ABN_Dev 1.0.0.0, WP9; PLAN 12)
 -- Context: UI (AddUserInterfaces, Context InGame). TESTING ONLY.
 --
 -- Ctrl+Shift+D or the launch bar "DEV" button toggles the panel
@@ -29,7 +29,7 @@ include("ABN_Rules")
 
 -- ABN:GLOBALS ABN_Config ABN_Rules
 local PREFIX = "[ABN][DEV]"
-local DEV_VERSION = "0.1.0.0"
+local DEV_VERSION = "1.0.0.0"
 local UI_MAX = 8
 local POLL_SECONDS = 0.4
 local HOLD_TICKS = 2            -- ticks to wait after a real ABN_* request
@@ -480,11 +480,22 @@ local function OnCitySelectionChanged(owner, cityID, i, j, k, isSelected, isEdit
 	if m_Open then RefreshResults() end
 end
 
+-- Set on game exit: the engine fires events during UI teardown (CityPanel's
+-- OnShutdown unhooks for the same reason), so listeners go quiet first.
+local m_Dead = false
+local function Teardown(why)
+	if m_Dead then return end
+	m_Dead = true
+	print(PREFIX .. " UI teardown: " .. why)
+	pcall(function() ContextPtr:ClearUpdate() end)
+end
+
 local function Subscribe(label, getter, fn)
 	local ok, err = pcall(function()
 		local ev = getter()
 		if ev == nil then error("event is nil") end
 		ev.Add(function(...)
+			if m_Dead then return end
 			local okH, errH = pcall(fn, ...)
 			if not okH then print(PREFIX .. " UI " .. label .. " listener error: " .. Str(errH)) end
 		end)
@@ -508,6 +519,9 @@ local function Initialize()
 	Subscribe("Events.LoadGameViewStateDone", function() return Events.LoadGameViewStateDone end, AttachLaunchButton)
 	Subscribe("Events.PlayerTurnActivated", function() return Events.PlayerTurnActivated end, OnPlayerTurnActivated)
 	Subscribe("Events.CitySelectionChanged", function() return Events.CitySelectionChanged end, OnCitySelectionChanged)
+	Events.ExitToMainMenu.Add(function() Teardown("exit to main menu") end)
+	Events.UserConfirmedClose.Add(function() Teardown("exit to desktop") end)
+	ContextPtr:SetShutdown(function() Teardown("context shutdown") end)
 	print(PREFIX .. " UI ready (Ctrl+Shift+D) " .. DEV_VERSION)
 end
 

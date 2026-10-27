@@ -1,5 +1,5 @@
 -- ===========================================================================
--- ABN_Dev_Core.lua  (ABN_Dev 0.1.0.0, WP9)
+-- ABN_Dev_Core.lua  (ABN_Dev 1.0.0.0, WP9)
 -- Module:   ABN_Dev_Core (global table), gameplay. TESTING ONLY.
 -- Content:  logging ([ABN][DEV] and [ABN][CHECK] lines, the tally, the lines
 --           the panel shows), the dev Game-property store, and the player,
@@ -27,7 +27,7 @@ include("ABN_Config")
 ABN_Dev_Core = {}
 local C = ABN_Dev_Core
 
-C.VERSION = "0.1.0.0"
+C.VERSION = "1.0.0.0"
 C.KEY = {
 	STATE  = "ABN_DevState",
 	TALLY  = "ABN_DevTally",

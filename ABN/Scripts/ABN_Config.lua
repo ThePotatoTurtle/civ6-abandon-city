@@ -12,7 +12,7 @@ end
 
 ABN_Config = {}
 
-ABN_Config.VERSION = "0.1.0"   -- keep equal to ABN.modinfo title / description
+ABN_Config.VERSION = "1.0.0"   -- keep equal to ABN.modinfo title / description
 ABN_Config.T_BANDS = { {maxPop = 4, T = 3}, {maxPop = 9, T = 4}, {maxPop = math.huge, T = 5} }
 ABN_Config.F_SMALL_MAX_POP = 4
 ABN_Config.F_SMALL = 1

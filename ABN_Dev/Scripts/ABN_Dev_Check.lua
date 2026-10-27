@@ -1,5 +1,5 @@
 -- ===========================================================================
--- ABN_Dev_Check.lua  (ABN_Dev 0.1.0.0, WP9)
+-- ABN_Dev_Check.lua  (ABN_Dev 1.0.0.0, WP9)
 -- Module:   ABN_Dev_Check (global table), gameplay. TESTING ONLY.
 -- Content:  the dev tools' own model of what the mod must do, and the checks
 --           that compare it with the mod's state:
@@ -452,6 +452,18 @@ local function Classify(ctx, e, city, k)
 		Emit(ctx, id, "PASS", "record removed on turn " .. arm.turn .. " (ran " .. (arm.turn - e.start + 1) .. " turns); debuff to turn " ..
 			e.endTurn .. ", cooldown until turn " .. e.cooldownEnd)
 		return
+	end
+	-- A cancel from the real city panel button arms nothing here; the mod's
+	-- cooldown record (endTurn = cancel turn + COOLDOWN_TURNS) shows it.
+	local plot = city ~= nil and C.PlotIndexOf(city) or -1
+	for _, r in ipairs(C.ReadArr(ABN_Config.KEY_COOLDOWNS)) do
+		local t = (r.endTurn or 0) - ABN_Config.COOLDOWN_TURNS
+		if city ~= nil and r.owner == e.owner and r.plot == plot and t >= e.start and t < turn then
+			Terminal(ctx, e, "CANCELLED", CancelEnd(e, t), t)
+			Emit(ctx, Id(ctx, "CANCEL", e), "PASS", "cancelled from the city panel on turn " .. t .. " (ran " .. (t - e.start + 1) ..
+				" turns); debuff to turn " .. e.endTurn .. ", cooldown until turn " .. e.cooldownEnd)
+			return
+		end
 	end
 	if ctx.mode ~= "turn" then
 		Broken(ctx, e, Id(ctx, "CANCEL", e), "the ABN_Active record disappeared and no cancel was armed")

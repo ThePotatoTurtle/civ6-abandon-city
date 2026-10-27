@@ -5,9 +5,15 @@
      The Context itself holds no visible controls. -->
 <Context Name="ABN_CityButton">
 
+	<!-- Home for the button on game exit (ABN_CityButton.lua Teardown). -->
+	<Container ID="ABN_Home" Hidden="1"/>
+
 	<Stack ID="ABN_BtnStack" Anchor="L,T" StackGrowth="Right" Padding="3" Hidden="1" ConsumeMouse="1">
 		<Button ID="ABN_Button" Anchor="L,T" Size="44,53" Texture="UnitPanel_ActionButton" ToolTip="">
-			<Label ID="ABN_ButtonLabel" Anchor="C,C" Offset="0,-2" Style="FontNormal18" Color="240,220,170,255" String="X"/>
+			<!-- The "city lost" notification icon (Notifications atlas, index 59), matching our notifications. -->
+			<Image ID="ABN_ButtonIcon" Anchor="C,C" Offset="0,-2" Size="32,32" Icon="ICON_NOTIFICATION_CITY_LOST" StretchMode="Uniform"/>
+			<!-- Turns left, shown instead of the icon while an abandonment runs. -->
+			<Label ID="ABN_ButtonLabel" Anchor="C,C" Offset="0,-2" Style="FontNormal18" Color="240,220,170,255" String="" Hidden="1"/>
 		</Button>
 	</Stack>
 

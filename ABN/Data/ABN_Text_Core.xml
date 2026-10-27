@@ -12,7 +12,7 @@
 			<Text>{1_Civ} is abandoning {2_City}</Text>
 		</Row>
 		<Row Tag="LOC_ABN_NOTIF_STARTED_SUMMARY" Language="en_US">
-			<Text>{1_Civ} is abandoning {2_City}. It will be gone in {3_Turns} {3_Turns : plural 1?turn; other?turns;}.</Text>
+			<Text>{1_Civ} has begun abandoning {2_City}.</Text>
 		</Row>
 		<Row Tag="LOC_ABN_NOTIF_STARTED_OWN_MESSAGE" Language="en_US">
 			<Text>Abandoning {1_City}</Text>

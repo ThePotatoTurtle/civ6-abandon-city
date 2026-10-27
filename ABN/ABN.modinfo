@@ -67,13 +67,13 @@
 	<!-- Mod browser text (front end). Defined only here, not in the Data text files. -->
 	<LocalizedText>
 		<Text id="LOC_ABN_MOD_TITLE">
-			<en_US>Abandon Cities v0.1.0</en_US>
+			<en_US>Abandon Cities v1.0.0</en_US>
 		</Text>
 		<Text id="LOC_ABN_MOD_TEASER">
 			<en_US>Abandon a city: its population shrinks over a few turns, then the city is removed.</en_US>
 		</Text>
 		<Text id="LOC_ABN_MOD_DESCRIPTION">
-			<en_US>Version 0.1.0.[NEWLINE][NEWLINE]Abandon a city of your own. Its population shrinks over a few turns and the city is then removed, while your nearby cities lose loyalty for a while.[NEWLINE][NEWLINE]Requires Gathering Storm.</en_US>
+			<en_US>Version 1.0.0.[NEWLINE][NEWLINE]Abandon one of your own cities. It shrinks over 3 to 5 turns and is then removed, while your nearby cities lose loyalty for a while.[NEWLINE][NEWLINE]- Abandon City: a button on the city panel. A popup shows the population schedule, the loyalty cost and the cities it will hit.[NEWLINE]- Countdown: 3, 4 or 5 turns depending on the city's size (pop 1 to 4, 5 to 9, 10 or more). It ends at 1 or 2 population.[NEWLINE]- Loyalty penalty: your own cities within 6 to 12 tiles lose 4 to 10 loyalty per turn, during the countdown and for as long again afterwards. Bigger cities hit harder and wider.[NEWLINE]- Cancel: any time. The population you lost stays lost, the penalty runs on for as many turns as the abandonment ran, and the city can't restart for 5 turns.[NEWLINE]- Auto-cancel: enemy military units within 6 tiles, damage or siege, or losing the city stop it, with no cooldown.[NEWLINE]- Blocked for your capital, your last city, original capitals, and cities that are damaged, besieged or have enemies within 6 tiles.[NEWLINE]- Notifications: civs that have met you hear about it. You get a notice every turn of the countdown.[NEWLINE][NEWLINE]Requires Gathering Storm. Human players only. Tested in multiplayer. Mods that rework the city panel may move or hide the button.[NEWLINE][NEWLINE]Known limitations:[NEWLINE]- The AI never abandons cities.[NEWLINE][NEWLINE]Author: ThePotatoTurtle</en_US>
 		</Text>
 	</LocalizedText>
 
